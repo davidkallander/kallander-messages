@@ -1,0 +1,28 @@
+{
+  "name": "@kallander/messages",
+  "version": "1.0.0",
+  "description": "Messages (the inbox, the conversation and the reply box) shared by David's CRMs.",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./messages.css": "./src/messages.css"
+  },
+  "files": ["src", "sql", "README.md"],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": ">=19"
+  },
+  "dependencies": {
+    "@ionic/core": "9.0.8"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "react": "19.3.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.2"
+  }
+}

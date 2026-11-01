@@ -1,0 +1,182 @@
+/* Messages (kallander-messages). Each app keeps its own look by setting these variables in its own stylesheet, after
+   importing this one (README: "Your colors"). The defaults are a plain grey-and-blue for a brand-new CRM. */
+:where(:root) {
+  --km-font: inherit;
+  --km-ink: #1c1c1e;
+  --km-muted: #6b6b70;
+  --km-faint: #8e8e93;
+  --km-line: #e1e1e6;
+  --km-surface: #fff;            /* the list and conversation panels */
+  --km-sunk: #efeff4;            /* search box, segmented control */
+  --km-hover: #f5f5f8;           /* a row under the pointer */
+  --km-radius: 12px;             /* the panels' corners */
+  --km-shadow: none;
+  --km-accent: #0a64d8;          /* links, ‹ back, the focus ring */
+  --km-selected: #0a64d8;        /* the open conversation's row */
+  --km-selected-ink: #fff;
+  --km-selected-muted: rgb(255 255 255 / .75);
+  --km-dot: #0a64d8;             /* unread */
+  --km-badge: #0a64d8;
+  --km-badge-ink: #fff;
+  --km-avatar: linear-gradient(#a3a3ad, #85858f);
+  --km-avatar-ink: #fff;
+  --km-us: #0a64d8;              /* our bubbles */
+  --km-us-ink: #fff;
+  --km-them: #e9e9ef;            /* theirs */
+  --km-them-ink: #1c1c1e;
+  --km-note: #fff3c4;            /* private notes */
+  --km-note-ink: #4d3700;
+  --km-send: #0a64d8;
+  --km-send-ink: #fff;
+  --km-focus: rgb(10 100 216 / .25);
+  --km-bad: #b42318;
+  --km-bad-soft: #fbe9e7;
+  --km-read-btn: #1f8cf8;        /* the round Read and Done buttons (iPhone's blue and purple) */
+  --km-done-btn: #6f5ef0;
+}
+
+/* ── The page: the list on the left, the conversation on the right. It fills the box the app gives it (set its height
+   in the app: .km-inbox.your-class { height: … }); each side scrolls inside. Narrow (a phone): one at a time. */
+.km-inbox { display: grid; grid-template-columns: clamp(240px, 40%, 380px) minmax(0, 1fr); gap: 16px; align-items: stretch; min-height: 0; box-sizing: border-box; font-family: var(--km-font); color: var(--km-ink) }
+.km-list, .km-pane { background: var(--km-surface); border-radius: var(--km-radius); box-shadow: var(--km-shadow); min-height: 0; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden }
+.km-list { padding: 14px 8px 8px; gap: 10px }
+.km-list > * { flex: none }
+.km-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 6px }
+.km-top h1 { margin: 0; font-size: 28px; line-height: 1.1 }
+.km-search { margin: 0 6px; border: 0; background: var(--km-sunk); border-radius: 8px; padding: 8px 10px; font: 14px var(--km-font); color: var(--km-ink); outline: none }
+.km-search:focus { box-shadow: 0 0 0 3px var(--km-focus) }
+.km-filter { margin: 0 6px; justify-self: start; align-self: flex-start }
+.km-filter button { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap }
+.km-badge { background: var(--km-badge); color: var(--km-badge-ink); border-radius: 999px; padding: 0 6px; font: 700 11px/17px var(--km-font); min-width: 17px; text-align: center; box-sizing: border-box }
+.km-empty { margin: 0; padding: 14px 10px; font-size: 14px; color: var(--km-muted) }
+.km-err { color: var(--km-bad) }
+.km-rows { list-style: none; margin: 0; padding: 0; display: grid; align-content: start; grid-auto-rows: max-content; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; flex: 1 1 auto !important; min-height: 0 }
+.km-row { position: relative; display: grid; grid-template-columns: 8px 36px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 8px; border-radius: 8px; color: var(--km-ink); text-decoration: none }
+.km-row:hover { background: var(--km-hover); color: var(--km-ink) }
+.km-row.on, .km-row.on:hover { background: var(--km-selected); color: var(--km-selected-ink) }
+.km-row.on .km-preview, .km-row.on .km-when { color: var(--km-selected-muted) }
+.km-row:focus-visible { outline: 2px solid var(--km-accent); outline-offset: -2px }
+.km-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--km-dot) }
+.km-dot.off { background: transparent }
+.km-row.on .km-dot:not(.off) { background: var(--km-selected-ink) }
+.km-av { width: 36px; height: 36px; border-radius: 50%; background: var(--km-avatar); color: var(--km-avatar-ink); display: inline-flex; align-items: center; justify-content: center; font: 700 13px var(--km-font); flex: none }
+.km-main { display: grid; gap: 2px; min-width: 0 }
+.km-name { font-weight: 600; font-size: 14px; display: flex; gap: 6px; align-items: center; min-width: 0; white-space: nowrap }
+.km-name-text { overflow: hidden; text-overflow: ellipsis }
+.km-name > :not(.km-name-text) { flex: none; font-size: 10.5px; font-weight: 600 }
+.km-row.on .km-name > :not(.km-name-text) { background: rgb(255 255 255 / .16); color: var(--km-selected-ink); border-color: transparent }
+.km-preview { font-size: 13px; color: var(--km-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis }
+.km-when { font-size: 12px; color: var(--km-muted); align-self: start; padding-top: 2px; white-space: nowrap }
+
+/* Read and Done as small round buttons on the row under the pointer (a computer) */
+.km-hover { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: none; gap: 6px; padding-left: 10px; background: inherit }
+.km-row:hover .km-hover, .km-row:focus-within .km-hover { display: flex }
+.km-row:hover .km-when { visibility: hidden }
+.km-hb { width: 28px; height: 28px; border: 0; border-radius: 14px; padding: 0; display: grid; place-items: center; cursor: pointer; color: #fff }
+.km-hb.read { background: var(--km-read-btn) } .km-hb.done { background: var(--km-done-btn) }
+.km-hb:hover { filter: brightness(1.1) }
+.km-hb svg, .km-opt svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round }
+.km-hb svg .fill, .km-opt svg .fill { fill: currentColor; stroke: none }
+
+/* The iPhone swipe (Ionic's sliding item, touch screens only) */
+.km-slide { display: block; border-radius: 8px }
+.km-ion { --background: var(--km-surface); --background-hover: transparent; --padding-start: 0; --inner-padding-end: 0; --min-height: 0; --border-radius: 8px; --color: var(--km-ink) }
+.km-ion > .km-row { flex: 1; min-width: 0 }
+.km-li .km-slide ion-item-options { border: 0; background: transparent }
+.km-opt { background: transparent; min-width: 64px; color: #fff; display: flex; align-items: center; justify-content: center }
+.km-opt::part(native) { flex: none; box-sizing: border-box; width: calc(100% - 12px); height: 52px; margin: 0; border-radius: 26px; padding: 0 }
+.km-opt.read::part(native) { background: var(--km-read-btn) }
+.km-opt.done::part(native) { background: var(--km-done-btn) }
+.km-opt svg { width: 26px; height: 26px }
+
+/* Right-click menu */
+.km-menu { position: fixed; z-index: 90; min-width: 200px; background: var(--km-surface); border: 1px solid var(--km-line); border-radius: 10px; box-shadow: 0 10px 30px rgb(0 0 0 / .18); padding: 5px; display: grid; font-family: var(--km-font) }
+.km-menu button { all: unset; cursor: pointer; padding: 7px 12px; border-radius: 6px; font: 14px var(--km-font); color: var(--km-ink) }
+.km-menu button:hover, .km-menu button:focus-visible { background: var(--km-selected); color: var(--km-selected-ink) }
+
+/* ── The conversation side */
+.km-pane { padding: 14px 16px; gap: 12px }
+.km-pane > * { flex: none }
+.km-pane-none { margin: auto; padding: 40px; text-align: center; color: var(--km-faint) }
+.km-pane-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-bottom: 10px; border-bottom: 1px solid var(--km-line) }
+.km-pane-name { display: grid; gap: 1px; flex: 1 1 180px; min-width: 0 }
+.km-pane-name b { font-size: 17px }
+.km-pane-name small { color: var(--km-muted); font-size: 12px }
+.km-back { display: none; font-size: 15px; text-decoration: none; color: var(--km-accent); flex-basis: 100% }
+.km-is-on { font-weight: 600 }
+.km-convo { display: flex; flex-direction: column; gap: 10px; min-height: 0; flex: 1 1 auto !important }
+
+/* Bubbles */
+.km-thread { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; overscroll-behavior: contain; padding: 4px 2px; min-height: 160px; flex: 1 1 auto }
+.km-thread-empty { margin: auto; text-align: center; color: var(--km-muted); font-size: 14px }
+.km-day { align-self: center; font: 600 12px/1.2 var(--km-font); color: var(--km-faint); margin: 8px 0 2px }
+.km-ev { align-self: center; max-width: 92%; text-align: center; font-size: 13px; color: var(--km-muted) }
+.km-msg { display: flex; flex-direction: column; max-width: min(86%, 600px) }
+.km-msg.us { align-self: flex-end; align-items: flex-end }
+.km-msg.them { align-self: flex-start; align-items: flex-start }
+.km-b { border-radius: 18px; padding: 9px 13px; font-size: 14px; line-height: 1.4; box-sizing: border-box; overflow-wrap: anywhere }
+.km-msg.us .km-b { background: var(--km-us); color: var(--km-us-ink); border-bottom-right-radius: 6px }
+.km-msg.them .km-b { background: var(--km-them); color: var(--km-them-ink); border-bottom-left-radius: 6px }
+.km-msg.failed .km-b { background: var(--km-bad-soft); color: var(--km-ink); box-shadow: inset 0 0 0 1px var(--km-bad) }
+.km-msg.us .km-b .km-link, .km-msg.us .km-b button { color: inherit }
+.km-subject { display: block; margin-bottom: 3px }
+.km-pre { white-space: pre-wrap }
+.km-meta { margin: 3px 6px 0; font-size: 12px; color: var(--km-muted) }
+.km-failed { margin: 3px 6px 0; font-size: 12px; color: var(--km-bad) }
+.km-faint { color: var(--km-faint) }
+.km-note { align-self: center; max-width: min(82%, 560px); background: var(--km-note); color: var(--km-note-ink); border-radius: 14px; padding: 8px 14px; font-size: 14px; box-sizing: border-box }
+.km-note small { display: flex; gap: 8px; align-items: baseline; font-size: 11.5px; opacity: .8; margin-bottom: 2px }
+.km-note small > :last-child:not(:first-child) { margin-left: auto }
+
+/* The reply box */
+.km-compose { display: grid; gap: 8px; border-top: 1px solid var(--km-line); padding-top: 10px }
+.km-compose-row { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap }
+.km-compose-row:empty { display: none }
+.km-compose-row.has-to .km-how { margin-left: auto }
+.km-to { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 0; font-size: 13px }
+.km-chip { white-space: nowrap; font: 500 13px var(--km-font); padding: 3px 10px; border-radius: 99px; border: 1px solid var(--km-line); background: var(--km-surface); color: var(--km-ink); cursor: pointer }
+.km-chip.on { background: var(--km-selected); border-color: var(--km-selected); color: var(--km-selected-ink) }
+.km-chip:disabled { opacity: .6; cursor: default }
+.km-chip small { font-weight: 400 }
+.km-expand { all: unset; cursor: pointer; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: var(--km-accent); font-size: 17px; border: 1px solid var(--km-line); flex: none }
+.km-expand:hover { background: var(--km-hover) }
+.km-subj { border: 1px solid var(--km-line); border-radius: 10px; padding: 8px 12px; font: 14px var(--km-font); background: var(--km-surface); color: var(--km-ink); outline: none }
+.km-subj:focus { border-color: var(--km-accent); box-shadow: 0 0 0 3px var(--km-focus) }
+.km-write { display: flex; gap: 8px; align-items: flex-end; border: 1px solid var(--km-line); border-radius: 20px; padding: 4px 4px 4px 14px; background: var(--km-surface) }
+.km-write:focus-within { border-color: var(--km-accent); box-shadow: 0 0 0 3px var(--km-focus) }
+.km-write.tall, .km-write.big { border-radius: 16px }
+.km-write textarea { flex: 1; min-width: 0; border: 0; background: transparent; font: 14px/1.4 var(--km-font); color: var(--km-ink); resize: none; padding: 6px 0; outline: none; box-shadow: none; max-height: 40vh; field-sizing: content }
+.km-write textarea:focus { border: 0; box-shadow: none; outline: none }
+.km-write.tall textarea { min-height: calc(1.4em * 5) }
+.km-write.big textarea { min-height: 50vh; max-height: none }
+.km-send { all: unset; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; background: var(--km-send); color: var(--km-send-ink); display: grid; place-items: center; flex: none }
+.km-send:disabled { opacity: .35; cursor: default }
+.km-send:focus-visible { outline: 2px solid var(--km-accent); outline-offset: 2px }
+.km-compose-note { margin: 0; font-size: 12.5px; color: var(--km-muted) }
+
+/* The larger window for an email, when the app has no sheet of its own */
+.km-window-back { position: fixed; inset: 0; z-index: 100; background: rgb(0 0 0 / .3); display: grid; place-items: start center; padding: 6vh 16px; overflow-y: auto }
+.km-window { width: min(760px, 100%); background: var(--km-surface); border-radius: 14px; box-shadow: 0 20px 60px rgb(0 0 0 / .25); padding: 16px; display: grid; gap: 12px; font-family: var(--km-font); color: var(--km-ink) }
+.km-window-head { display: flex; align-items: center; justify-content: space-between; gap: 12px }
+.km-window-body { display: grid; gap: 10px }
+
+/* Plain controls, for a CRM that hasn't given its own (MessagesLook) */
+.km-btn { border: 1px solid var(--km-line); background: var(--km-surface); color: var(--km-ink); padding: 5px 12px; border-radius: 8px; cursor: pointer; font: 500 13px var(--km-font); white-space: nowrap; text-decoration: none }
+.km-btn:hover { border-color: var(--km-accent) }
+.km-btn.km-is-on { border-color: var(--km-accent); color: var(--km-accent) }
+.km-seg { display: inline-flex; background: var(--km-sunk); border-radius: 8px; padding: 2px }
+.km-seg button { background: none; border: 0; border-radius: 6px; padding: 5px 11px; color: var(--km-ink); font: 500 13px var(--km-font); cursor: pointer }
+.km-seg button.on { background: var(--km-surface); box-shadow: 0 1px 2px rgb(0 0 0 / .14); font-weight: 600 }
+.km-tag { display: inline-block; padding: 0 6px; border-radius: 99px; background: var(--km-sunk); color: var(--km-muted); border: 1px solid var(--km-line) }
+.km-tag.warn { background: var(--km-bad-soft); color: var(--km-bad) }
+.km-link { all: unset; cursor: pointer; color: var(--km-accent); text-decoration: underline; text-underline-offset: 3px }
+
+/* Narrow (a phone): the list, then the conversation, with ‹ back */
+@media (max-width: 760px) {
+  .km-inbox { grid-template-columns: minmax(0, 1fr) }
+  .km-inbox.picked .km-list { display: none }
+  .km-inbox:not(.picked) .km-pane { display: none }
+  .km-back { display: block }
+  .km-pane { padding: 10px 12px }
+  .km-msg { max-width: 92% }
+}
