@@ -66,6 +66,9 @@ describe("the list's words", () => {
     expect(preview({ last: msg({ direction: "out", automatic: true, body: "Reminder:  your visit" }) })).toBe("Automatic: Reminder: your visit");
     expect(preview({ last: msg({ channel: "email", subject: "Your proposal", body: "…" }) })).toBe("Email: Your proposal");
     expect(preview({ last: msg({ channel: "call", body: "" }) })).toBe("Call");
+    expect(preview({ name: "Mike Neely", last: msg({ channel: "call", body: "" }) })).toBe("Call from Mike");
+    expect(preview({ name: "(360) 447-2268", last: msg({ channel: "call", body: "" }) })).toBe("Call");
+    expect(preview({ name: "Mike Neely", last: msg({ channel: "call", direction: "out", body: "" }) })).toBe("You: Call");
   });
   it("makes letters for the picture", () => {
     expect(initials("Leah Helms")).toBe("LH");

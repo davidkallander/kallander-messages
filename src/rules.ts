@@ -74,12 +74,21 @@ export function buildInbox<M extends Message>(messages: M[], states: MessageStat
 const CHANNEL: Record<string, string> = { sms: "Text", email: "Email", call: "Call", note: "Note", facebook: "Facebook", instagram: "Instagram", gmb: "Google", webchat: "Chat", other: "Message" };
 export const channelName = (c: string) => CHANNEL[c] ?? "Message";
 
-/** The line under a conversation's name: "You: See you Tuesday" / "Email: Your proposal" / "Automatic: Reminder…" / "Call". */
-export function preview(c: Pick<Conversation, "last">) {
+/** The line under a conversation's name: "You: See you Tuesday" / "Email: Your proposal" / "Automatic: Reminder…" /
+ *  "Call from Mike" (a call they made, by the first name of `name`; just "Call" for a phone number). */
+export function preview(c: Pick<Conversation, "last"> & { name?: string }) {
   const m = c.last;
-  const what = m.channel === "email" ? (m.subject || m.body) : m.channel === "call" ? (m.body || "Call") : m.body;
+  const caller = m.channel === "call" && m.direction === "in" ? firstName(c.name) : "";
+  const call = caller ? `Call from ${caller}${m.body ? `: ${m.body}` : ""}` : (m.body || "Call");
+  const what = m.channel === "email" ? (m.subject || m.body) : m.channel === "call" ? call : m.body;
   const lead = m.direction === "out" ? (m.automatic ? "Automatic: " : "You: ") : m.channel === "email" ? "Email: " : "";
   return (lead + (what || channelName(m.channel))).replace(/\s+/g, " ").trim().slice(0, 120);
+}
+
+/** "Mike" from "Mike Neely"; nothing for a phone number or a blank. */
+export function firstName(name?: string | null) {
+  const w = (name ?? "").trim().split(/\s+/)[0] ?? "";
+  return /^\p{L}/u.test(w) ? w : "";
 }
 
 /** When, as Messages shows it in the list: a time today, a weekday this week, else the date. */
