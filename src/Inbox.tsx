@@ -125,7 +125,7 @@ export function MessagesInbox<R extends InboxRow>(p: InboxProps<R>) {
           <h1>{p.title ?? "Messages"}</h1>
           {p.action}
         </div>
-        <input className="km-search" type="search" placeholder="Search conversations" aria-label="Search conversations" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="km-search" type="search" autoComplete="off" placeholder="Search conversations" aria-label="Search conversations" value={q} onChange={(e) => setQ(e.target.value)} />
         {p.filters.length > 1 && (
           <div className={`${look.segment} km-filter`} role="group" aria-label="Show">
             {p.filters.map((f) => {
