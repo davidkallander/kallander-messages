@@ -167,17 +167,21 @@ export function PaneHead({ back, backLabel = "Messages", avatar, name, sub, chil
   );
 }
 
-/** Mark read (once read it says ✓ Read, and clicking marks it unread) and Mark as Done (✓ Done takes it back). */
-export function MarkButtons<R extends InboxRow>({ r, mark }: { r: R; mark: (r: R, what: Mark) => void }) {
+/** Mark read (once read it says ✓ Read, and clicking marks it unread) and Mark as Done (✓ Done takes it back). When we
+ *  wrote last there's nothing to mark Done (David, Nov 3, 2026): it says "Waiting on Maria" instead, until they answer. */
+export function MarkButtons<R extends InboxRow>({ r, mark, who }: { r: R; mark: (r: R, what: Mark) => void;
+  /** Their first name, for "Waiting on Maria" */ who?: string }) {
   const look = useLook();
   return (
     <>
       <button type="button" className={`${look.button}${r.unread ? "" : " km-is-on"}`} aria-pressed={!r.unread}
         title={r.unread ? "Take the dot off (it stays on Needs reply until someone answers or marks it done)" : "Read. Click to mark it unread: the dot comes back, and it goes back on Needs reply, as a reminder"}
         onClick={() => mark(r, r.unread ? "read" : "unread")}>{r.unread ? "Mark read" : "✓ Read"}</button>
-      <button type="button" className={`${look.button}${r.done ? " km-is-on" : ""}`} aria-pressed={r.done}
-        title={r.done ? "Done: no reply needed. Click to mark it not done (back on Needs reply)" : "No reply needed: take it off Needs reply"}
-        onClick={() => mark(r, r.done ? "undone" : "done")}>{r.done ? "✓ Done" : "Mark as Done"}</button>
+      {r.waitingOnThem && !r.done
+        ? <span className="km-waiting" title="You wrote last. It comes back to Needs reply when they answer.">{who ? `Waiting on ${who}` : "Waiting on a reply"}</span>
+        : <button type="button" className={`${look.button}${r.done ? " km-is-on" : ""}`} aria-pressed={r.done}
+          title={r.done ? "Done: no reply needed. Click to mark it not done (back on Needs reply)" : "No reply needed: take it off Needs reply"}
+          onClick={() => mark(r, r.done ? "undone" : "done")}>{r.done ? "✓ Done" : "Mark as Done"}</button>}
     </>
   );
 }

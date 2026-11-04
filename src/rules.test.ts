@@ -22,6 +22,13 @@ describe("buildInbox", () => {
     expect(buildInbox(ms, [st({ read_at: "2026-10-31T10:05:00Z", done_at: "2026-10-31T10:05:00Z" })])[0]).toMatchObject({ needsReply: false, unread: false });
     expect(buildInbox([...ms, msg({ direction: "out", sent_at: "2026-10-31T10:10:00Z" })], [])[0]).toMatchObject({ needsReply: false, unread: false });
   });
+  it("waits on them when we wrote last, and stops once they answer or ours didn't send", () => {
+    const asked = [msg({ sent_at: "2026-10-31T10:00:00Z" }), msg({ direction: "out", sent_at: "2026-10-31T10:10:00Z" })];
+    expect(buildInbox(asked, [])[0]).toMatchObject({ needsReply: false, waitingOnThem: true });
+    expect(buildInbox([msg({ direction: "out" })], [])[0]).toMatchObject({ waitingOnThem: true });
+    expect(buildInbox([...asked, msg({ sent_at: "2026-10-31T11:00:00Z" })], [])[0]).toMatchObject({ needsReply: true, waitingOnThem: false });
+    expect(buildInbox([msg({ direction: "out", status: "failed" })], [])[0]).toMatchObject({ waitingOnThem: false });
+  });
   it("doesn't count a reply that didn't send", () => {
     const ms = [msg({ sent_at: "2026-10-31T10:00:00Z" }), msg({ direction: "out", status: "failed", sent_at: "2026-10-31T10:10:00Z" })];
     expect(buildInbox(ms, [])[0]).toMatchObject({ needsReply: true, unread: true });

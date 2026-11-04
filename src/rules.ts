@@ -38,6 +38,8 @@ export interface Conversation<M extends Message = Message> {
   unread: boolean;
   /** Marked Done since they last wrote. Never done and unread: Mark unread takes Done off. */
   done: boolean;
+  /** We wrote last and it went (David, Nov 3, 2026): nothing to answer or mark Done; we're waiting on them. */
+  waitingOnThem: boolean;
 }
 
 /** One conversation per key, the newest first. */
@@ -61,11 +63,14 @@ export function buildInbox<M extends Message>(messages: M[], states: MessageStat
     // Marked unread, and nobody's answered, marked it read or tapped Done since
     const marked = !!s?.unread_at && !doneSince(s.unread_at) && !answeredAfter(s.unread_at) && !(s.read_at && s.read_at >= s.unread_at);
     const waiting = !!lastIn && !lastIn.ignore && !answeredAfter(lastIn.sent_at) && !doneSince(lastIn.sent_at);
+    // The newest message that counts: one of ours that didn't send isn't the last word
+    const lastWord = list.find((m) => m.direction === "in" || m.status !== "failed");
     out.push({
       key, last, count: list.length,
       done: !marked && !!s?.done_at && (!lastIn || doneSince(lastIn.sent_at)),
       needsReply: marked || waiting,
       unread: marked || (waiting && !(s?.read_at && s.read_at >= lastIn!.sent_at)),
+      waitingOnThem: !marked && !waiting && lastWord?.direction === "out",
     });
   }
   return out.sort((a, b) => b.last.sent_at.localeCompare(a.last.sent_at));

@@ -185,3 +185,6 @@
   .km-pane { padding: 10px 12px }
   .km-msg { max-width: 92% }
 }
+
+/* We wrote last: nothing to mark Done (Nov 3, 2026) */
+.km-waiting { align-self: center; font: 500 13px var(--km-font); color: var(--km-muted); padding: 0 6px; white-space: nowrap }
