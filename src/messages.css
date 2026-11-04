@@ -107,7 +107,7 @@
 .km-convo { display: flex; flex-direction: column; gap: 10px; min-height: 0; flex: 1 1 auto !important }
 
 /* Bubbles */
-.km-thread { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; overscroll-behavior: contain; padding: 4px 2px; min-height: 160px; flex: 1 1 auto }
+.km-thread { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; overscroll-behavior: contain; padding: 4px 2px; min-height: 160px; flex: 1 1 auto }
 .km-thread-empty { margin: auto; text-align: center; color: var(--km-muted); font-size: 14px }
 .km-day { align-self: center; font: 600 12px/1.2 var(--km-font); color: var(--km-faint); margin: 8px 0 2px }
 .km-ev { align-self: center; max-width: 92%; text-align: center; font-size: 13px; color: var(--km-muted) }
@@ -121,6 +121,9 @@
 .km-msg.us .km-b .km-link, .km-msg.us .km-b button { color: inherit }
 .km-subject { display: block; margin-bottom: 3px }
 .km-pre { white-space: pre-wrap }
+/* Longer than two lines: folded to two, with Show all and Show less (Nov 3, 2026) */
+.km-pre.km-fold { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden }
+.km-more { display: inline-block; margin-top: 3px; font-size: 13px }
 .km-meta { margin: 3px 6px 0; font-size: 12px; color: var(--km-muted) }
 .km-failed { margin: 3px 6px 0; font-size: 12px; color: var(--km-bad) }
 .km-faint { color: var(--km-faint) }
@@ -130,6 +133,8 @@
 
 /* The reply box */
 .km-compose { display: grid; gap: 8px; border-top: 1px solid var(--km-line); padding-top: 10px }
+/* One line until it's clicked into (Nov 3, 2026) */
+.km-compose.small { padding-top: 8px }
 .km-compose-row { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap }
 .km-compose-row:empty { display: none }
 .km-compose-row.has-to .km-how { margin-left: auto }

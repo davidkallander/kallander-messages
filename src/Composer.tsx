@@ -49,6 +49,9 @@ export interface ComposerProps {
   bigWindow?: boolean;
   /** The app's own sheet for the larger window; a plain one otherwise. */
   renderWindow?: (p: { title: string; onClose: () => void; children: ReactNode }) => ReactNode;
+  /** One line until it's clicked into, like Messages on a Mac, so the conversation gets the room (David, Nov 3, 2026).
+   *  Who it's to, Text / Email / Note and the subject show once it's open; it folds back when left empty. On by default. */
+  compact?: boolean;
 }
 
 export function Composer(p: ComposerProps) {
@@ -62,6 +65,7 @@ export function Composer(p: ComposerProps) {
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState("");
   const [big, setBig] = useState(false);
+  const [open, setOpen] = useState(false);
   const text = useRef<HTMLTextAreaElement>(null);
   const ch = p.channels.find((c) => c.key === channel) ?? first;
   const pick = (k: string, who?: string[]) => { setChannel(k); setTo(who?.length ? who : p.defaultTo?.(k) ?? []); setProblem(""); };
@@ -100,6 +104,8 @@ export function Composer(p: ComposerProps) {
     return ok;
   };
   const go = () => void send().then((ok) => ok && setBig(false));
+  // One line until it's clicked into (and while nothing's written)
+  const small = (p.compact ?? true) && !open && !big && !body.trim();
 
   const top = (
     <div className={`km-compose-row${people.length ? " has-to" : ""}`}>
@@ -122,9 +128,9 @@ export function Composer(p: ComposerProps) {
   );
   const fields = (
     <>
-      {ch.subject && <input className="km-subj" aria-label="Subject" placeholder="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} />}
-      <div className={`km-write${(ch.rows ?? 2) > 2 ? " tall" : ""}${big ? " big" : ""}`}>
-        <textarea ref={big ? undefined : text} rows={big ? 16 : ch.rows ?? 2} value={body} placeholder={place} aria-label={place} onChange={(e) => setBody(e.target.value)}
+      {ch.subject && !small && <input className="km-subj" aria-label="Subject" placeholder="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} />}
+      <div className={`km-write${(ch.rows ?? 2) > 2 && !small ? " tall" : ""}${big ? " big" : ""}`}>
+        <textarea ref={big ? undefined : text} rows={big ? 16 : small ? 1 : ch.rows ?? 2} value={body} placeholder={place} aria-label={place} onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); go(); } }} />
         <button type="button" className="km-send" disabled={disabled} onClick={go} aria-label={ch.private ? `Add ${ch.label.toLowerCase()}` : "Send"} title={`${ch.private ? `Add ${ch.label.toLowerCase()}` : "Send"} (⌘ Enter)`}>
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -136,7 +142,11 @@ export function Composer(p: ComposerProps) {
   const title = `${ch.label}${names.length ? ` ${names.join(" and ")}` : ""}`;
 
   return (
-    <div className="km-compose">
+    <div className={`km-compose${small ? " small" : ""}`} onFocus={() => setOpen(true)}
+      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null) && !body.trim()) setOpen(false); }}
+      // Its buttons (To, Text / Email / Note) keep the typing where it is: Safari doesn't focus a clicked button, which
+      // would otherwise look like leaving the box and fold it before the click lands
+      onMouseDown={(e) => { if (open && !(e.target as HTMLElement).closest("textarea, input")) e.preventDefault(); }}>
       {big ? (
         <>
           <p className="km-compose-note">Writing in the larger window. <button type="button" className={look.link} onClick={() => setBig(false)}>Bring it back here</button></p>
@@ -144,7 +154,7 @@ export function Composer(p: ComposerProps) {
             ? p.renderWindow({ title, onClose: () => setBig(false), children: <div className="km-window-body">{top}{fields}</div> })
             : <PlainWindow title={title} onClose={() => setBig(false)}><div className="km-window-body">{top}{fields}</div></PlainWindow>}
         </>
-      ) : <>{top}{fields}</>}
+      ) : <>{!small && top}{fields}</>}
     </div>
   );
 }

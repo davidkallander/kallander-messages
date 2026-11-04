@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { dayName } from "./rules";
 import { useLook } from "./look";
 
@@ -22,7 +22,7 @@ export function Thread({ items, empty, long = 280, className }: {
   items: ThreadItem[];
   /** What it says when there's nothing yet. */
   empty?: ReactNode;
-  /** Longer messages fold to this many letters, with Show all. 0 never folds. */
+  /** Messages and notes longer than two lines fold to two, with Show all and Show less (David, Nov 3, 2026). 0 never folds. */
   long?: number;
   className?: string;
 }) {
@@ -40,7 +40,7 @@ export function Thread({ items, empty, long = 280, className }: {
         <Fragment key={i.key}>
           {(n === 0 || dayName(items[n - 1].at) !== dayName(i.at)) && <div className="km-day">{dayName(i.at)}</div>}
           {i.kind === "event" ? <div className="km-ev">{i.text}</div>
-            : i.kind === "note" ? <div className="km-note">{i.head && <small>{i.head}</small>}<div className="km-pre">{i.body}</div></div>
+            : i.kind === "note" ? <div className="km-note">{i.head && <small>{i.head}</small>}<Folded text={i.body} fold={long > 0} /></div>
             : <Bubble i={i} long={long} />}
         </Fragment>
       ))}
@@ -48,16 +48,36 @@ export function Thread({ items, empty, long = 280, className }: {
   );
 }
 
-function Bubble({ i, long }: { i: Extract<ThreadItem, { kind: "message" }>; long: number }) {
+/** Words that fold to two lines when there are more (measured, so it fits the bubble's width), with Show all and back. */
+function Folded({ text, fold }: { text: string; fold: boolean }) {
   const look = useLook();
-  const [more, setMore] = useState(false);
-  const fold = long > 0 && i.body.length > long && !more;
+  const box = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [long, setLong] = useState(false);
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!fold || !el || open) return;
+    const check = () => setLong(el.scrollHeight > el.clientHeight + 1);
+    check();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(check) : null;
+    ro?.observe(el);
+    return () => ro?.disconnect();
+  }, [text, fold, open]);
+  if (!text) return <div className="km-pre"><span className="km-faint">(nothing in it)</span></div>;
+  return (
+    <>
+      <div ref={box} className={`km-pre${fold && !open ? " km-fold" : ""}`}>{text}</div>
+      {fold && (long || open) && <button type="button" className={`${look.link} km-more`} onClick={() => setOpen(!open)}>{open ? "Show less" : "Show all"}</button>}
+    </>
+  );
+}
+
+function Bubble({ i, long }: { i: Extract<ThreadItem, { kind: "message" }>; long: number }) {
   return (
     <div className={`km-msg ${i.side}${i.failed ? " failed" : ""}`}>
       <div className="km-b">
         {i.subject && <b className="km-subject">{i.subject}</b>}
-        <div className="km-pre">{fold ? `${i.body.slice(0, long - 20).trim()}…` : i.body || <span className="km-faint">(nothing in it)</span>}</div>
-        {fold && <button type="button" className={look.link} onClick={() => setMore(true)}>Show all</button>}
+        <Folded text={i.body} fold={long > 0} />
       </div>
       {i.meta && <div className="km-meta">{i.meta}</div>}
       {i.failed && <div className="km-failed">Didn't send{typeof i.failed === "string" && i.failed ? `: ${i.failed}` : ""}</div>}
