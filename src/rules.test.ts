@@ -98,3 +98,19 @@ describe("putting a saved reply in the box", () => {
     expect(insertAt("Hi XX there", 3, 5, "Ann")).toEqual({ text: "Hi Ann there", caret: 6 });
   });
 });
+
+describe("drafts", () => {
+  it("are kept per conversation, and cleared when emptied", async () => {
+    const store = new Map<string, string>();
+    Object.assign(globalThis, {
+      localStorage: { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v), removeItem: (k: string) => void store.delete(k) },
+      window: Object.assign(globalThis.window ?? {}, { dispatchEvent: () => true }),
+    });
+    const { loadDraft, saveDraft } = await import("./drafts");
+    saveDraft("fam-1", { channel: "sms", to: ["p1"], subject: "", body: "Hi Anna, about Monday" });
+    expect(loadDraft("fam-1")).toMatchObject({ channel: "sms", to: ["p1"], body: "Hi Anna, about Monday" });
+    expect(loadDraft("fam-2")).toBeNull();
+    saveDraft("fam-1", { channel: "sms", to: ["p1"], subject: "", body: "   " });
+    expect(loadDraft("fam-1")).toBeNull();
+  });
+});

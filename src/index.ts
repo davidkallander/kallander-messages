@@ -5,3 +5,4 @@ export { MessagesInbox, PaneHead, MarkButtons, type InboxFilter, type InboxProps
 export { Thread, type ThreadItem } from "./Thread";
 export { Composer, insertAt, type ChannelOption, type ComposerProps, type Person, type SavedReply, type SendResult } from "./Composer";
 export { MessagesLook, useLook, type Look } from "./look";
+export { loadDraft, saveDraft, useDrafts, type Draft } from "./drafts";

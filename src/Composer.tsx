@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLook } from "./look";
+import { loadDraft, saveDraft } from "./drafts";
 
 // The reply box (David, Oct 31, 2026): how (Text, Email, a private Note…), who (when there's more than one person to
 // write to), the subject for an email, and the words. ⌘ Enter sends. An email can open in a larger window, like Mail's.
@@ -64,16 +65,29 @@ export interface ComposerProps {
   replies?: SavedReply[];
   /** Fills a reply in for who it's to (their first name…) before it goes in the box. */
   fill?: (body: string, p: { channel: string; to: string[] }) => string;
+  /** Keeps what's written as a draft for this conversation (the same key as its row in the inbox), so it's still there
+   *  after leaving the page or reloading. Leave out to keep no drafts. */
+  draftKey?: string;
 }
 
 export function Composer(p: ComposerProps) {
   const look = useLook();
   const touched = useRef(false);
   const first = p.channels.find((c) => c.key === p.channel) ?? p.channels[0];
-  const [channel, setChannel] = useState(first.key);
-  const [to, setTo] = useState<string[]>(() => p.defaultTo?.(first.key) ?? []);
-  const [subject, setSubject] = useState(p.subject ?? "");
-  const [body, setBody] = useState("");
+  // A draft left in this conversation picks up where it was (its way, who, subject and words)
+  const kept = (() => { const d = loadDraft(p.draftKey); return d && p.channels.some((c) => c.key === d.channel) ? d : null; })();
+  if (kept) touched.current = true;
+  const [channel, setChannel] = useState(kept?.channel ?? first.key);
+  const [to, setTo] = useState<string[]>(() => kept?.to ?? p.defaultTo?.(first.key) ?? []);
+  const [subject, setSubject] = useState(kept?.subject ?? p.subject ?? "");
+  const [body, setBodyState] = useState(kept?.body ?? "");
+  // Every change to the words, way, who or subject is kept as the draft
+  const now = useRef({ channel: kept?.channel ?? first.key, to: kept?.to ?? [] as string[], subject: kept?.subject ?? p.subject ?? "", body: kept?.body ?? "" });
+  const keep = (patch: Partial<typeof now.current>) => {
+    now.current = { ...now.current, ...patch };
+    if (p.draftKey) saveDraft(p.draftKey, now.current.body.trim() ? now.current : null);
+  };
+  const setBody = (v: string) => { setBodyState(v); keep({ body: v }); };
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState("");
   const [big, setBig] = useState(false);
@@ -90,13 +104,26 @@ export function Composer(p: ComposerProps) {
     return () => document.removeEventListener("mousedown", away);
   }, [menu]);
   const ch = p.channels.find((c) => c.key === channel) ?? first;
-  const pick = (k: string, who?: string[]) => { setChannel(k); setTo(who?.length ? who : p.defaultTo?.(k) ?? []); setProblem(""); };
+  const pick = (k: string, who?: string[]) => { const t = who?.length ? who : p.defaultTo?.(k) ?? []; setChannel(k); setTo(t); setProblem(""); now.current = { ...now.current, channel: k, to: t }; if (now.current.body.trim()) keep({}); };
+  // Another conversation in the same box: its own draft, or an empty box
+  const shownKey = useRef(p.draftKey);
+  useEffect(() => {
+    if (shownKey.current === p.draftKey) return;
+    shownKey.current = p.draftKey;
+    const d = loadDraft(p.draftKey);
+    const k = d && p.channels.some((c) => c.key === d.channel) ? d : null;
+    touched.current = !!k;
+    const c = k?.channel ?? (p.channels.find((x) => x.key === p.channel) ?? p.channels[0]).key;
+    const t = k?.to ?? p.defaultTo?.(c) ?? [];
+    now.current = { channel: c, to: t, subject: k?.subject ?? p.subject ?? "", body: k?.body ?? "" };
+    setChannel(c); setTo(t); setSubject(now.current.subject); setBodyState(now.current.body); setProblem("");
+  }, [p.draftKey]);
 
   // Until someone picks, the box follows the app's choice of way (and who, as the conversation changes)
   useEffect(() => { if (!touched.current && p.channel && p.channel !== channel) pick(p.channel); }, [p.channel]);
   const dflt = (p.defaultTo?.(channel) ?? []).join(" ");
-  useEffect(() => { if (!touched.current) setTo(dflt ? dflt.split(" ") : []); }, [dflt]);
-  useEffect(() => { if (!touched.current && p.subject !== undefined) setSubject(p.subject); }, [p.subject]);
+  useEffect(() => { if (!touched.current) { setTo(dflt ? dflt.split(" ") : []); now.current.to = dflt ? dflt.split(" ") : []; } }, [dflt]);
+  useEffect(() => { if (!touched.current && p.subject !== undefined) { setSubject(p.subject); now.current.subject = p.subject; } }, [p.subject]);
   useEffect(() => {
     if (!p.request) return;
     touched.current = true;
@@ -119,7 +146,7 @@ export function Composer(p: ComposerProps) {
       const why = typeof out === "string" ? out : out?.problem ?? "";
       const sent = !out || (typeof out === "object" && out.sent);
       if (why) setProblem(why);
-      if (sent) { setBody(""); if (ch.subject) setSubject(p.subject ?? ""); p.onSent?.(channel); }
+      if (sent) { setBodyState(""); if (ch.subject) setSubject(p.subject ?? ""); now.current = { ...now.current, body: "", subject: p.subject ?? "" }; saveDraft(p.draftKey, null); p.onSent?.(channel); }
       ok = sent && !why;
     } catch (e) { setProblem((e as Error).message || "That didn't send. Try again."); }
     setBusy(false);
@@ -146,7 +173,7 @@ export function Composer(p: ComposerProps) {
           {people.map((x) => {
             const on = to.includes(x.id) && !x.why;
             return <button key={x.id} type="button" className={`km-chip${on ? " on" : ""}`} disabled={!!x.why} title={x.why ? `${x.title ?? x.name}: ${x.why}` : x.title}
-              aria-pressed={on} onClick={() => { touched.current = true; setTo(on ? to.filter((y) => y !== x.id) : [...to, x.id]); }}>{x.name}{x.why && <small> · {x.why}</small>}</button>;
+              aria-pressed={on} onClick={() => { touched.current = true; const t = on ? to.filter((y) => y !== x.id) : [...to, x.id]; setTo(t); keep({ to: t }); }}>{x.name}{x.why && <small> · {x.why}</small>}</button>;
           })}
         </span>
       )}
@@ -178,7 +205,7 @@ export function Composer(p: ComposerProps) {
   );
   const fields = (
     <>
-      {ch.subject && !small && <input className="km-subj" aria-label="Subject" placeholder="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} />}
+      {ch.subject && !small && <input className="km-subj" aria-label="Subject" placeholder="Subject" value={subject} onChange={(e) => { setSubject(e.target.value); keep({ subject: e.target.value }); }} />}
       <div className={`km-write${(ch.rows ?? 2) > 2 && !small ? " tall" : ""}${big ? " big" : ""}`}>
         <textarea ref={(el) => { area.current = el; if (!big) text.current = el; }} rows={big ? 16 : small ? 1 : ch.rows ?? 2} value={body} placeholder={place} aria-label={place} onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); go(); } }} />

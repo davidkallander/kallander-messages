@@ -1,6 +1,7 @@
 import { createElement, useEffect, useRef, useState, type ReactNode } from "react";
 import { initials, preview, whenShort, type Conversation, type Message } from "./rules";
 import { useLook } from "./look";
+import { loadDraft, useDrafts } from "./drafts";
 
 // Messages, like Messages on a Mac (David, Oct 31, 2026; first in Ranger Ops): every conversation, newest first, so
 // nothing gets missed. Needs reply holds the ones where they wrote last until someone answers or marks them Done; a dot
@@ -53,6 +54,9 @@ export interface InboxProps<R extends InboxRow> {
   menu?: (r: R) => { label: string; run: () => void }[];
   /** → goes to the reply box (people who can reply). */
   canReply?: boolean;
+  /** Show a conversation's draft ("Draft: …", like Messages on a Mac) in place of its last message: the reply box's
+   *  drafts, kept under the row's key (Composer draftKey). */
+  drafts?: boolean;
   /** The right side: a PaneHead and the conversation. */
   pane: ReactNode;
   className?: string;
@@ -66,6 +70,7 @@ export function MessagesInbox<R extends InboxRow>(p: InboxProps<R>) {
   const list = p.rows.filter((r) => !filter || filter.test(r)).filter((r) => !t || `${r.name} ${r.search ?? ""}`.toLowerCase().includes(t));
   const [menu, setMenu] = useState<{ r: R; x: number; y: number } | null>(null);
   const page = useRef<HTMLDivElement>(null);
+  useDrafts();   // the list shows a draft as soon as it's written or sent
 
   // The keyboard, like Mail (David, Oct 31, 2026): ↑ and ↓ go to the conversation above or below; → goes to the reply
   // box, and ← (at the start of the box) or Esc comes back to the list.
@@ -144,7 +149,7 @@ export function MessagesInbox<R extends InboxRow>(p: InboxProps<R>) {
           <p className="km-empty">{t ? "No conversations match." : filter?.empty ?? "No messages yet."}</p>
         )}
         <ul className="km-rows">
-          {list.map((r) => <Row key={r.key} r={r} on={r.key === p.selected} href={p.href(r.key)} mark={p.mark} onMenu={(x, y) => setMenu({ r, x, y })} />)}
+          {list.map((r) => <Row key={r.key} r={r} on={r.key === p.selected} href={p.href(r.key)} mark={p.mark} draft={p.drafts ? loadDraft(r.key)?.body : undefined} onMenu={(x, y) => setMenu({ r, x, y })} />)}
         </ul>
         {menu && <RowMenu r={menu.r} x={menu.x} y={menu.y} mark={p.mark} more={p.menu} open={() => p.open(menu.r.key)} onClose={() => setMenu(null)} />}
       </section>
@@ -209,7 +214,7 @@ const loadIonic = () => (ionic ??= import("@ionic/core/components").then(({ init
 
 type Sliding = HTMLElement & { close: () => Promise<void> };
 
-function Row<R extends InboxRow>({ r, on, href, mark, onMenu }: { r: R; on: boolean; href: string; mark?: (r: R, what: Mark) => void; onMenu: (x: number, y: number) => void }) {
+function Row<R extends InboxRow>({ r, on, href, mark, draft, onMenu }: { r: R; on: boolean; href: string; mark?: (r: R, what: Mark) => void; draft?: string; onMenu: (x: number, y: number) => void }) {
   const look = useLook();
   const [touch] = useState(touchScreen);
   const [ready, setReady] = useState(false);
@@ -239,7 +244,7 @@ function Row<R extends InboxRow>({ r, on, href, mark, onMenu }: { r: R; on: bool
       <span className="km-av" aria-hidden="true">{r.avatar ?? initials(r.name)}</span>
       <span className="km-main">
         <span className="km-name"><span className="km-name-text">{r.name}</span>{r.tags?.map((g) => <span key={g.label} className={`${look.tag}${g.tone ? ` ${g.tone}` : ""}`}>{g.label}</span>)}</span>
-        <span className="km-preview">{preview(r)}</span>
+        <span className="km-preview">{draft ? <><span className="km-draft">Draft:</span> {draft.replace(/\s+/g, " ").slice(0, 120)}</> : preview(r)}</span>
       </span>
       <span className="km-when">{whenShort(r.last.sent_at)}</span>
       {mark && !touch && <span className="km-hover">
