@@ -28,6 +28,14 @@ export interface Person {
   title?: string;
 }
 
+/** A saved reply (David, Nov 6, 2026): words kept by the app, put into the box at the cursor from the reply box's
+ *  Saved replies menu, like GHL's snippets. */
+export interface SavedReply {
+  id: string;
+  name: string;
+  body: string;
+}
+
 export type SendResult = null | undefined | string | { problem: string; sent: boolean };
 
 export interface ComposerProps {
@@ -52,6 +60,10 @@ export interface ComposerProps {
   /** One line until it's clicked into, like Messages on a Mac, so the conversation gets the room (David, Nov 3, 2026).
    *  Who it's to, Text / Email / Note and the subject show once it's open; it folds back when left empty. On by default. */
   compact?: boolean;
+  /** Saved replies to put in the box (a menu beside Text / Email / Note). Leave out to show none. */
+  replies?: SavedReply[];
+  /** Fills a reply in for who it's to (their first name…) before it goes in the box. */
+  fill?: (body: string, p: { channel: string; to: string[] }) => string;
 }
 
 export function Composer(p: ComposerProps) {
@@ -67,6 +79,16 @@ export function Composer(p: ComposerProps) {
   const [big, setBig] = useState(false);
   const [open, setOpen] = useState(false);
   const text = useRef<HTMLTextAreaElement>(null);
+  const area = useRef<HTMLTextAreaElement | null>(null);
+  const [menu, setMenu] = useState(false);
+  const menuBox = useRef<HTMLSpanElement>(null);
+  // The menu closes on a click anywhere else (the box keeps the typing focus, so leaving it isn't a blur)
+  useEffect(() => {
+    if (!menu) return;
+    const away = (e: MouseEvent) => { if (!menuBox.current?.contains(e.target as Node)) setMenu(false); };
+    document.addEventListener("mousedown", away);
+    return () => document.removeEventListener("mousedown", away);
+  }, [menu]);
   const ch = p.channels.find((c) => c.key === channel) ?? first;
   const pick = (k: string, who?: string[]) => { setChannel(k); setTo(who?.length ? who : p.defaultTo?.(k) ?? []); setProblem(""); };
 
@@ -104,6 +126,16 @@ export function Composer(p: ComposerProps) {
     return ok;
   };
   const go = () => void send().then((ok) => ok && setBig(false));
+  // A saved reply goes in where the cursor is (in place of anything selected), and the cursor ends up after it
+  const putReply = (r: SavedReply) => {
+    setMenu(false);
+    const words = p.fill ? p.fill(r.body, { channel, to: picked }) : r.body;
+    const el = area.current;
+    const out = insertAt(body, el ? el.selectionStart : body.length, el ? el.selectionEnd : body.length, words);
+    setBody(out.text);
+    requestAnimationFrame(() => { const t = area.current; if (t) { t.focus(); t.setSelectionRange(out.caret, out.caret); } });
+  };
+  const replies = !ch.private && p.replies?.length ? p.replies : [];
   // One line until it's clicked into (and while nothing's written)
   const small = (p.compact ?? true) && !open && !big && !body.trim();
 
@@ -123,6 +155,24 @@ export function Composer(p: ComposerProps) {
           {p.channels.map((c) => <button key={c.key} type="button" className={channel === c.key ? "on" : ""} aria-pressed={channel === c.key} onClick={() => { touched.current = true; pick(c.key); }}>{c.label}</button>)}
         </span>
       )}
+      {replies.length > 0 && (
+        <span className="km-replies" ref={menuBox} onKeyDown={(e) => { if (e.key === "Escape" && menu) { e.stopPropagation(); setMenu(false); } }}
+          onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setMenu(false); }}>
+          <button type="button" className="km-expand km-replies-btn" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)} aria-label="Saved replies" title="Saved replies">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 4h14v16l-7-4-7 4z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>
+          </button>
+          {menu && (
+            <span className="km-replies-menu" role="menu" aria-label="Saved replies">
+              <b className="km-replies-head">Saved replies</b>
+              {replies.map((r) => (
+                <button key={r.id} type="button" role="menuitem" onClick={() => putReply(r)} title={r.body}>
+                  <span>{r.name}</span><small>{(p.fill ? p.fill(r.body, { channel, to: picked }) : r.body).replace(/\s+/g, " ").slice(0, 90)}</small>
+                </button>
+              ))}
+            </span>
+          )}
+        </span>
+      )}
       {p.bigWindow && ch.subject && !big && <button type="button" className="km-expand" onClick={() => setBig(true)} aria-label="Write in a larger window" title="Write in a larger window">⤢</button>}
     </div>
   );
@@ -130,7 +180,7 @@ export function Composer(p: ComposerProps) {
     <>
       {ch.subject && !small && <input className="km-subj" aria-label="Subject" placeholder="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} />}
       <div className={`km-write${(ch.rows ?? 2) > 2 && !small ? " tall" : ""}${big ? " big" : ""}`}>
-        <textarea ref={big ? undefined : text} rows={big ? 16 : small ? 1 : ch.rows ?? 2} value={body} placeholder={place} aria-label={place} onChange={(e) => setBody(e.target.value)}
+        <textarea ref={(el) => { area.current = el; if (!big) text.current = el; }} rows={big ? 16 : small ? 1 : ch.rows ?? 2} value={body} placeholder={place} aria-label={place} onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); go(); } }} />
         <button type="button" className="km-send" disabled={disabled} onClick={go} aria-label={ch.private ? `Add ${ch.label.toLowerCase()}` : "Send"} title={`${ch.private ? `Add ${ch.label.toLowerCase()}` : "Send"} (⌘ Enter)`}>
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -157,6 +207,17 @@ export function Composer(p: ComposerProps) {
       ) : <>{!small && top}{fields}</>}
     </div>
   );
+}
+
+/** The box's words with `piece` put in from `a` to `b` (a selection is replaced), and where the cursor goes after it.
+ *  A piece going into the middle of words gets a space on either side where it needs one. */
+export function insertAt(text: string, a: number, b: number, piece: string) {
+  const start = Math.max(0, Math.min(a, text.length)), end = Math.max(start, Math.min(b, text.length));
+  const before = text.slice(0, start), after = text.slice(end);
+  const lead = before && !/\s$/.test(before) ? " " : "";
+  const trail = after && !/^\s/.test(after) ? " " : "";
+  const put = lead + piece + trail;
+  return { text: before + put + after, caret: (before + lead + piece).length };
 }
 
 /** The larger window when the app has no sheet of its own. */

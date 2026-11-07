@@ -84,3 +84,17 @@ describe("the list's words", () => {
     expect(initials("")).toBe("?");
   });
 });
+
+import { insertAt } from "./Composer";
+describe("putting a saved reply in the box", () => {
+  it("goes in an empty box as it is", () => {
+    expect(insertAt("", 0, 0, "Hi Ann!")).toEqual({ text: "Hi Ann!", caret: 7 });
+  });
+  it("goes where the cursor is, with spaces where words would run together", () => {
+    expect(insertAt("Thanks.See you", 7, 7, "Here's the link.")).toEqual({ text: "Thanks. Here's the link. See you", caret: 24 });
+    expect(insertAt("Thanks. ", 8, 8, "Bye")).toEqual({ text: "Thanks. Bye", caret: 11 });
+  });
+  it("replaces what's selected", () => {
+    expect(insertAt("Hi XX there", 3, 5, "Ann")).toEqual({ text: "Hi Ann there", caret: 6 });
+  });
+});

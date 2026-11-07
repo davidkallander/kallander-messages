@@ -19,7 +19,7 @@ buttons.
 | `<MessagesInbox>` | The whole page: search, filters, the list, and a slot for the right side. |
 | `<PaneHead>`, `<MarkButtons>` | The top of a conversation: back, picture, name, Mark read / Mark as Done. |
 | `<Thread items>` | The bubbles: theirs left, ours right, a line per day, calls in the middle, notes. |
-| `<Composer>` | The reply box: Text / Email / Note, who it's to, subject, ⌘ Enter. |
+| `<Composer>` | The reply box: Text / Email / Note, who it's to, subject, ⌘ Enter, and saved replies (`replies`, `fill`). |
 | `<MessagesLook>` | Hands the package the app's own button, segmented-control, tag and link classes. |
 
 ## Dropping it into a new CRM
