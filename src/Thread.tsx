@@ -14,6 +14,8 @@ export type ThreadItem =
     /** Didn't send: true, or why. */
     failed?: boolean | string;
     sending?: boolean;
+    /** Pictures and files sent with it, shown in the bubble under the words (v1.6.0). */
+    attachments?: ReactNode;
   }
   | { kind: "note"; key: string; at: string; head?: ReactNode; body: string }
   | { kind: "event"; key: string; at: string; text: ReactNode };
@@ -77,7 +79,8 @@ function Bubble({ i, long }: { i: Extract<ThreadItem, { kind: "message" }>; long
     <div className={`km-msg ${i.side}${i.failed ? " failed" : ""}`}>
       <div className="km-b">
         {i.subject && <b className="km-subject">{i.subject}</b>}
-        <Folded text={i.body} fold={long > 0} />
+        {(i.body || !i.attachments) && <Folded text={i.body} fold={long > 0} />}
+        {i.attachments && <div className="km-attach">{i.attachments}</div>}
       </div>
       {i.meta && <div className="km-meta">{i.meta}</div>}
       {i.failed && <div className="km-failed">Didn't send{typeof i.failed === "string" && i.failed ? `: ${i.failed}` : ""}</div>}

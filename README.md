@@ -19,8 +19,9 @@ buttons.
 | `<MessagesInbox>` | The whole page: search, filters, the list, and a slot for the right side. |
 | `<PaneHead>`, `<MarkButtons>` | The top of a conversation: back, picture, name, Mark read / Mark as Done. |
 | `<Thread items>` | The bubbles: theirs left, ours right, a line per day, calls in the middle, notes. |
-| `<Composer>` | The reply box: Text / Email / Note, who it's to, subject, ⌘ Enter, saved replies (`replies`, `fill`), and drafts kept in the browser (`draftKey`: the conversation's key). |
+| `<Composer>` | The reply box: Text / Email / Note, who it's to, subject, ⌘ Enter, saved replies (`replies`, `fill`), drafts kept in the browser (`draftKey`: the conversation's key), and pictures and files (`attach`: the app uploads; `send` gets `files`, v1.6.0). |
 | `drafts` on `<MessagesInbox>` | Shows a red **Draft:** in place of a conversation's last message when its reply box has one (v1.5.0). |
+| `attachments` on a Thread message | Pictures and files shown in the bubble under the words (v1.6.0). |
 | `<MessagesLook>` | Hands the package the app's own button, segmented-control, tag and link classes. |
 
 ## Dropping it into a new CRM

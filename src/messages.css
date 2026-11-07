@@ -200,3 +200,15 @@
 .km-replies-menu button:hover, .km-replies-menu button:focus-visible { background: var(--km-hover) }
 .km-replies-menu button span { font: 600 13.5px var(--km-font) }
 .km-replies-menu button small { font: 12px/1.35 var(--km-font); color: var(--km-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+
+/* Pictures and files (v1.6.0): chips above the box while writing, and in a bubble once sent */
+.km-files { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 6px }
+.km-file { display: inline-flex; align-items: center; gap: 6px; max-width: 220px; padding: 3px 4px 3px 6px; border: 1px solid var(--km-line, #e3e3ea); border-radius: 8px; font-size: 13px; background: var(--km-bg, #fff) }
+.km-file img { width: 28px; height: 28px; object-fit: cover; border-radius: 5px }
+.km-file.off { opacity: .55 }
+.km-file-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis }
+.km-file button { border: 0; background: none; cursor: pointer; font-size: 16px; line-height: 1; color: var(--km-muted); padding: 0 3px }
+.km-attach { display: grid; gap: 6px; margin-top: 6px }
+.km-attach:first-child { margin-top: 0 }
+.km-attach img { display: block; max-width: min(240px, 100%); max-height: 320px; border-radius: 12px; cursor: zoom-in }
+.km-attach a { color: inherit; text-decoration: underline; overflow-wrap: anywhere }
