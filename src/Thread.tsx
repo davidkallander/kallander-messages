@@ -35,6 +35,23 @@ export function Thread({ items, empty, long = 280, className }: {
     down(); const f = requestAnimationFrame(down); const t = setTimeout(down, 250);
     return () => { cancelAnimationFrame(f); clearTimeout(t); };
   }, [items.length]);
+  // And it stays at the newest as its size changes, unless someone has scrolled up to read: a folded conversation
+  // opened (David, Nov 7, 2026; hidden, it has no height and can't scroll), the window resized, the page fitting it in
+  useEffect(() => {
+    const b = box.current;
+    if (!b || typeof ResizeObserver === "undefined") return;
+    let stick = true;
+    const onScroll = () => { if (b.clientHeight) stick = b.scrollHeight - b.clientHeight - b.scrollTop < 24; };
+    const down = () => { if (stick && b.clientHeight) b.scrollTop = b.scrollHeight; };
+    // Its own size, what's in it (long messages folding, Show all appearing) and pictures loading all change the height
+    const ro = new ResizeObserver(down);
+    ro.observe(b);
+    const mo = typeof MutationObserver === "undefined" ? null : new MutationObserver(down);
+    mo?.observe(b, { childList: true, subtree: true, characterData: true });
+    b.addEventListener("scroll", onScroll, { passive: true });
+    b.addEventListener("load", down, true);
+    return () => { ro.disconnect(); mo?.disconnect(); b.removeEventListener("scroll", onScroll); b.removeEventListener("load", down, true); };
+  }, []);
   return (
     <div className={`km-thread${className ? ` ${className}` : ""}`} ref={box} aria-label="Conversation">
       {!items.length && <p className="km-thread-empty">{empty ?? "Nothing yet."}</p>}
