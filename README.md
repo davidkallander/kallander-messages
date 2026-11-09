@@ -23,6 +23,7 @@ buttons.
 | `drafts` on `<MessagesInbox>` | Shows a red **Draft:** in place of a conversation's last message when its reply box has one (v1.5.0). |
 | `attachments` on a Thread message | Pictures and files shown in the bubble under the words (v1.6.0). |
 | `mentions` on `<Composer>` and `<Thread>` | Teammates' first names: an @mention in a private note is highlighted as it's typed, the box says who'll be told, and the saved note shows it highlighted (v1.7.0). The app does the telling. `findMentions` / `mentionedNames` find them. Color: `--km-mention`. |
+| `mentions` on `<Composer>` and `<Thread>` | Teammates' first names: an @mention is highlighted as it's typed in a private note, with "Deborah will be told" under the box, and in the saved note (v1.7.0). The app does the telling. `findMentions`, `mentionedNames`, `markMentions` are exported too. |
 | `<MessagesLook>` | Hands the package the app's own button, segmented-control, tag and link classes. |
 
 ## Dropping it into a new CRM
