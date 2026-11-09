@@ -212,3 +212,14 @@
 .km-attach:first-child { margin-top: 0 }
 .km-attach img { display: block; max-width: min(240px, 100%); max-height: 320px; border-radius: 12px; cursor: zoom-in }
 .km-attach a { color: inherit; text-decoration: underline; overflow-wrap: anywhere }
+
+/* @mentions (v1.7.0): the name highlighted in the reply box as it's typed and in the saved note. The box's words sit
+   over a copy of themselves (.km-mirror) whose only visible part is the highlight. */
+.km-area { flex: 1; min-width: 0; display: grid }
+.km-area > textarea, .km-area > .km-mirror { grid-area: 1 / 1; }
+.km-mirror { font: 14px/1.4 var(--km-font); padding: 6px 0; white-space: pre-wrap; overflow-wrap: break-word; color: transparent; pointer-events: none; overflow: hidden; max-height: 40vh }
+.km-write.big .km-mirror { max-height: none }
+.km-mention { background: var(--km-mention, rgba(37, 99, 235, 0.16)); color: inherit; border-radius: 4px; box-shadow: 0 0 0 1px var(--km-mention, rgba(37, 99, 235, 0.16)) }
+.km-mirror .km-mention { color: transparent }
+.km-pre .km-mention { font-weight: 600; color: var(--km-mention-ink, inherit) }
+.km-told { color: var(--km-accent) }

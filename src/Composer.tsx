@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { markMentions, mentionedNames } from "./mentions";
 import { useLook } from "./look";
 import { loadDraft, saveDraft } from "./drafts";
 
@@ -72,6 +73,9 @@ export interface ComposerProps {
    *  after leaving the page or reloading. Leave out to keep no drafts. */
   draftKey?: string;
   /** Pictures and files (a 📎 beside the box): the app uploads each and says what's allowed. Leave out for none. */
+  /** Teammates' first names a private note can @mention (v1.7.0): highlighted as typed, with "Deborah will be told"
+   *  under the box. The app does the telling. Leave out for none. */
+  mentions?: string[];
   attach?: {
     upload: (file: File) => Promise<Attachment>;
     /** The file picker's types ("image/*,.pdf"). */
@@ -149,6 +153,9 @@ export function Composer(p: ComposerProps) {
   const people = ch.private ? [] : p.people?.(channel) ?? [];
   const picked = to.filter((id) => people.some((x) => x.id === id && !x.why));
   const names = picked.map((id) => people.find((x) => x.id === id)!.name);
+  const canMention = !!ch.private && !!p.mentions?.length;
+  const told = canMention ? mentionedNames(body, p.mentions!) : [];
+  const mirror = useRef<HTMLSpanElement>(null);
   const place = ch.placeholder ?? `${ch.label}${names.length ? ` ${names.join(" and ")}` : people.length ? " …" : ""}`;
   const canAttach = !!p.attach && !!p.attach.note?.(channel);
   const sending = canAttach ? files : [];
@@ -254,12 +261,23 @@ export function Composer(p: ComposerProps) {
         </div>
       )}
       <div className={`km-write${(ch.rows ?? 2) > 2 && !small ? " tall" : ""}${big ? " big" : ""}`}>
-        <textarea ref={(el) => { area.current = el; if (!big) text.current = el; }} rows={big ? 16 : small ? 1 : ch.rows ?? 2} value={body} placeholder={place} aria-label={place} onChange={(e) => setBody(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); go(); } }} />
+        {(() => {
+          const area_ = <textarea ref={(el) => { area.current = el; if (!big) text.current = el; }} rows={big ? 16 : small ? 1 : ch.rows ?? 2} value={body} placeholder={place} aria-label={place} onChange={(e) => setBody(e.target.value)}
+            onScroll={(e) => { if (mirror.current) mirror.current.scrollTop = e.currentTarget.scrollTop; }}
+            onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); go(); } }} />;
+          // A note's @mentions, highlighted under the words as they're typed: a copy of the text behind the box, in
+          // the same place and size, with only the marks showing through
+          if (!canMention) return area_;
+          return <span className="km-area">
+            <span ref={mirror} className="km-mirror" aria-hidden="true">{markMentions(body, p.mentions!)}{"\n"}</span>
+            {area_}
+          </span>;
+        })()}
         <button type="button" className="km-send" disabled={disabled} onClick={go} aria-label={ch.private ? `Add ${ch.label.toLowerCase()}` : "Send"} title={`${ch.private ? `Add ${ch.label.toLowerCase()}` : "Send"} (⌘ Enter)`}>
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
       </div>
+      {canMention && told.length > 0 && !small && <p className="km-compose-note km-told">🔔 {told.join(" and ")} will be told</p>}
       {(ch.off || problem || uploading || (files.length > 0 && !small)) && <p className={`km-compose-note${problem ? " km-err" : ""}`} role={problem ? "alert" : undefined}>
         {problem || ch.off || (uploading ? "Uploading…" : canAttach ? p.attach!.note!(channel) : `${ch.label} can't take files: they stay here for a text or email.`)}</p>}
     </>

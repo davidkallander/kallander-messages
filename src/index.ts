@@ -6,3 +6,4 @@ export { Thread, type ThreadItem } from "./Thread";
 export { Composer, insertAt, type Attachment, type ChannelOption, type ComposerProps, type Person, type SavedReply, type SendResult } from "./Composer";
 export { MessagesLook, useLook, type Look } from "./look";
 export { loadDraft, saveDraft, useDrafts, type Draft } from "./drafts";
+export { findMentions, markMentions, mentionedNames } from "./mentions";
