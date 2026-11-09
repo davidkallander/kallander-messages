@@ -106,13 +106,14 @@ const said = (t: Tapback) => `${t.who ?? (t.side === "us" ? "You" : "They")} ${V
 function Bubble({ i, long, tapbacks }: { i: Extract<ThreadItem, { kind: "message" }>; long: number; tapbacks?: Tapback[] }) {
   return (
     <div className={`km-msg ${i.side}${i.failed ? " failed" : ""}${tapbacks?.length ? " km-has-tap" : ""}`}>
-      {tapbacks?.length ? (
-        // Like a phone: the reaction on the bubble's top corner, on the side away from the person who sent it
-        <span className="km-tap" role="img" aria-label={tapbacks.map(said).join("; ")} title={tapbacks.map(said).join("\n")}>
-          {tapbacks.map((t, n) => <span key={n} className={`km-tap-one ${t.side}`}>{t.emoji}</span>)}
-        </span>
-      ) : null}
       <div className="km-b">
+        {tapbacks?.length ? (
+          // Like a phone: the reaction on the bubble's top corner, on the side away from the person who sent it. Inside
+          // the bubble, not the message, whose width is the line under it when that's wider (v1.8.3)
+          <span className="km-tap" role="img" aria-label={tapbacks.map(said).join("; ")} title={tapbacks.map(said).join("\n")}>
+            {tapbacks.map((t, n) => <span key={n} className={`km-tap-one ${t.side}`}>{t.emoji}</span>)}
+          </span>
+        ) : null}
         {i.subject && <b className="km-subject">{i.subject}</b>}
         {(i.body || !i.attachments) && <Folded text={i.body} fold={long > 0} />}
         {i.attachments && <div className="km-attach">{i.attachments}</div>}

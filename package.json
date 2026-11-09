@@ -1,6 +1,6 @@
 {
   "name": "@kallander/messages",
-  "version": "1.8.2",
+  "version": "1.8.3",
   "description": "Messages (the inbox, the conversation and the reply box) shared by David's CRMs.",
   "private": true,
   "type": "module",
