@@ -52,7 +52,7 @@ export interface ComposerProps {
   /** Who's picked to begin with, for a way. */
   defaultTo?: (channel: string) => string[];
   /** Start a message from elsewhere (a Text button on the card): bump n to start another. */
-  request?: { channel: string; to?: string[]; n: number } | null;
+  request?: { channel: string; to?: string[]; n: number; /** false: pick the way and who without taking the cursor (v1.8.2) */ focus?: boolean } | null;
   /** The subject it starts with (Re: their last one). */
   subject?: string;
   /** Sends it. Returns nothing when it went, else what went wrong (and whether some of it went). */
@@ -147,7 +147,7 @@ export function Composer(p: ComposerProps) {
     if (!p.request) return;
     touched.current = true;
     pick(p.request.channel, p.request.to);
-    text.current?.focus();
+    if (p.request.focus !== false) text.current?.focus();
   }, [p.request?.n]);
 
   const people = ch.private ? [] : p.people?.(channel) ?? [];
