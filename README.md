@@ -24,6 +24,7 @@ buttons.
 | `attachments` on a Thread message | Pictures and files shown in the bubble under the words (v1.6.0). |
 | `mentions` on `<Composer>` and `<Thread>` | Teammates' first names: an @mention in a private note is highlighted as it's typed, the box says who'll be told, and the saved note shows it highlighted (v1.7.0). The app does the telling. `findMentions` / `mentionedNames` find them. Color: `--km-mention`. |
 | `mentions` on `<Composer>` and `<Thread>` | Teammates' first names: an @mention is highlighted as it's typed in a private note, with "Deborah will be told" under the box, and in the saved note (v1.7.0). The app does the telling. `findMentions`, `mentionedNames`, `markMentions` are exported too. |
+| Reactions on `<Thread>` | A "👍 to “…”" (Android) or "Liked “…”" (iPhone) text shows as the emoji on the corner of the text it's about, like a phone, instead of its own bubble; one that matches no earlier text stays a bubble. Give each message `from` (a first name) for "Amanda liked this" on hover. `reactions={false}` turns it off (v1.8.0). |
 | `<MessagesLook>` | Hands the package the app's own button, segmented-control, tag and link classes. |
 
 ## Dropping it into a new CRM

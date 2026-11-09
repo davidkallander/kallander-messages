@@ -7,3 +7,4 @@ export { Composer, insertAt, type Attachment, type ChannelOption, type ComposerP
 export { MessagesLook, useLook, type Look } from "./look";
 export { loadDraft, saveDraft, useDrafts, type Draft } from "./drafts";
 export { findMentions, markMentions, mentionedNames } from "./mentions";
+export { foldReactions, parseReaction, findQuoted, type Reaction, type Tapback } from "./reactions";

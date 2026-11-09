@@ -122,6 +122,13 @@
 .km-msg.them .km-b { background: var(--km-them); color: var(--km-them-ink); border-bottom-left-radius: 6px }
 .km-msg.failed .km-b { background: var(--km-bad-soft); color: var(--km-ink); box-shadow: inset 0 0 0 1px var(--km-bad) }
 .km-msg.us .km-b .km-link, .km-msg.us .km-b button { color: inherit }
+/* Reactions (v1.8.0): the emoji on the top corner of the text it's about, away from its sender, like a phone */
+.km-msg.km-has-tap { position: relative; margin-top: 12px }
+.km-tap { position: absolute; top: -14px; display: inline-flex; gap: 2px; z-index: 1; cursor: default; user-select: none }
+.km-msg.us .km-tap { left: -10px }
+.km-msg.them .km-tap { right: -10px }
+.km-tap-one { display: grid; place-items: center; min-width: 28px; height: 28px; padding: 0 4px; box-sizing: border-box; border-radius: 99px; font-size: 15px; line-height: 1; background: var(--km-them); border: 2px solid var(--km-surface); box-shadow: 0 1px 2px rgb(0 0 0 / .12) }
+.km-tap-one.us { background: var(--km-us) }
 .km-subject { display: block; margin-bottom: 3px }
 .km-pre { white-space: pre-wrap }
 /* Longer than two lines: folded to two, with Show all and Show less (Nov 3, 2026) */

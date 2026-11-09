@@ -1,7 +1,8 @@
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { dayName } from "./rules";
 import { useLook } from "./look";
 import { markMentions } from "./mentions";
+import { foldReactions, type Tapback } from "./reactions";
 
 // A conversation, like Messages (David, Oct 31, 2026): oldest at the top, theirs on the left in grey and ours on the
 // right in the app's color, a line for each day, calls and other events in the middle, private notes in their own color.
@@ -17,11 +18,13 @@ export type ThreadItem =
     sending?: boolean;
     /** Pictures and files sent with it, shown in the bubble under the words (v1.6.0). */
     attachments?: ReactNode;
+    /** Who sent it, by first name: "Amanda liked this" on a reaction (v1.8.0). */
+    from?: string;
   }
   | { kind: "note"; key: string; at: string; head?: ReactNode; body: string }
   | { kind: "event"; key: string; at: string; text: ReactNode };
 
-export function Thread({ items, empty, long = 280, className, mentions }: {
+export function Thread({ items: all, empty, long = 280, className, mentions, reactions = true }: {
   items: ThreadItem[];
   /** What it says when there's nothing yet. */
   empty?: ReactNode;
@@ -30,7 +33,10 @@ export function Thread({ items, empty, long = 280, className, mentions }: {
   className?: string;
   /** Teammates' first names: an @mention of one in a note is highlighted (v1.7.0). */
   mentions?: string[];
+  /** A "👍 to …" or "Liked …" text shows as the emoji on the text it's about, as on a phone (v1.8.0). false: as texts. */
+  reactions?: boolean;
 }) {
+  const { items, reactions: tapbacks } = useMemo(() => (reactions ? foldReactions(all) : { items: all, reactions: new Map<string, Tapback[]>() }), [all, reactions]);
   const box = useRef<HTMLDivElement>(null);
   // Opens at the newest, once the layout has its height (a phone sizes it a moment later)
   useEffect(() => {
@@ -63,7 +69,7 @@ export function Thread({ items, empty, long = 280, className, mentions }: {
           {(n === 0 || dayName(items[n - 1].at) !== dayName(i.at)) && <div className="km-day">{dayName(i.at)}</div>}
           {i.kind === "event" ? <div className="km-ev">{i.text}</div>
             : i.kind === "note" ? <div className="km-note">{i.head && <small>{i.head}</small>}<Folded text={i.body} fold={long > 0} mentions={mentions} /></div>
-            : <Bubble i={i} long={long} />}
+            : <Bubble i={i} long={long} tapbacks={tapbacks.get(i.key)} />}
         </Fragment>
       ))}
     </div>
@@ -94,9 +100,18 @@ function Folded({ text, fold, mentions }: { text: string; fold: boolean; mention
   );
 }
 
-function Bubble({ i, long }: { i: Extract<ThreadItem, { kind: "message" }>; long: number }) {
+const VERB: Record<string, string> = { "👍": "liked", "❤️": "loved", "👎": "disliked", "😂": "laughed at", "‼️": "emphasized", "❓": "questioned" };
+const said = (t: Tapback) => `${t.who ?? (t.side === "us" ? "You" : "They")} ${VERB[t.emoji] ?? `reacted ${t.emoji} to`} this · ${new Date(t.at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`;
+
+function Bubble({ i, long, tapbacks }: { i: Extract<ThreadItem, { kind: "message" }>; long: number; tapbacks?: Tapback[] }) {
   return (
-    <div className={`km-msg ${i.side}${i.failed ? " failed" : ""}`}>
+    <div className={`km-msg ${i.side}${i.failed ? " failed" : ""}${tapbacks?.length ? " km-has-tap" : ""}`}>
+      {tapbacks?.length ? (
+        // Like a phone: the reaction on the bubble's top corner, on the side away from the person who sent it
+        <span className="km-tap" role="img" aria-label={tapbacks.map(said).join("; ")} title={tapbacks.map(said).join("\n")}>
+          {tapbacks.map((t, n) => <span key={n} className={`km-tap-one ${t.side}`}>{t.emoji}</span>)}
+        </span>
+      ) : null}
       <div className="km-b">
         {i.subject && <b className="km-subject">{i.subject}</b>}
         {(i.body || !i.attachments) && <Folded text={i.body} fold={long > 0} />}
