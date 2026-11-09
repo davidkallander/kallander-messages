@@ -22,7 +22,8 @@ export interface Reaction { emoji: string; quote: string; removed: boolean }
 /** What a reaction text says, or null when it's an ordinary text. */
 export function parseReaction(body: string): Reaction | null {
   const t = body.trim();
-  const m = t.match(new RegExp(`^(.{1,40}?)\\s+(?:to|from)?\\s*${QUOTE}([\\s\\S]+)${QUOTE}$`, "u"));
+  // The closing quote is optional: a phone that shortens the text may leave it off after the "…"
+  const m = t.match(new RegExp(`^(.{1,40}?)\\s+(?:to|from)?\\s*${QUOTE}([\\s\\S]+?)${QUOTE}?$`, "u"));
   if (!m) return null;
   let head = m[1].trim();
   const quote = m[2];
@@ -35,14 +36,15 @@ export function parseReaction(body: string): Reaction | null {
   return null;
 }
 
-/** Straight quotes, one space, no "…" at the end: so a phone's shortened copy matches the text it came from. */
-const plain = (s: string) => s.replace(/[“”„]/g, '"').replace(/[‘’]/g, "'").replace(/\s+/g, " ").trim()
-  .replace(/(?:…|\.\.\.)$/, "").trim().toLowerCase();
+/** Letters and digits only: a phone's copy drops line breaks, curls quotes, swaps dashes and shortens with "…", so
+ *  only the words are compared (v1.8.1). */
+const plain = (s: string) => s.normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
 
 /** Which earlier message a quote is from: the newest whose words start with it (or, failing that, hold it). */
 export function findQuoted<T extends { body: string }>(quote: string, earlier: T[]): T | null {
   const q = plain(quote);
   if (q.length < 2) return null;
+  // A quote shortened mid-word ("so kids h…") still starts the text; one that's the whole text matches too
   for (let n = earlier.length - 1; n >= 0; n--) if (plain(earlier[n].body).startsWith(q)) return earlier[n];
   for (let n = earlier.length - 1; n >= 0; n--) if (plain(earlier[n].body).includes(q)) return earlier[n];
   return null;
@@ -67,4 +69,18 @@ export function foldReactions<T extends { kind: string; key: string; at: string;
     on.set(target.key, list);
   }
   return { items: keep, reactions: on };
+}
+
+const THUMBS = /^👍(?:[\u{1F3FB}-\u{1F3FF}])?\ufe0f?$/u;
+/**
+ * A thumbs-up means "got it" (David, Nov 8, 2026): a reaction 👍 (any skin tone, or iPhone's "Liked") or a text that's
+ * only 👍. It doesn't put a conversation back on Needs reply or make it unread (v1.8.1). Any other reaction (❓, ❤️…)
+ * still does, since it may need an answer.
+ */
+export function isAcknowledgement(body: string | null | undefined) {
+  const t = String(body ?? "").trim();
+  if (!t) return false;
+  if ([...t.matchAll(/👍/gu)].length && /^(?:👍[\u{1F3FB}-\u{1F3FF}]?\ufe0f?\s*)+$/u.test(t)) return true;
+  const r = parseReaction(t);
+  return !!r && !r.removed && THUMBS.test(r.emoji);
 }

@@ -25,6 +25,7 @@ buttons.
 | `mentions` on `<Composer>` and `<Thread>` | Teammates' first names: an @mention in a private note is highlighted as it's typed, the box says who'll be told, and the saved note shows it highlighted (v1.7.0). The app does the telling. `findMentions` / `mentionedNames` find them. Color: `--km-mention`. |
 | `mentions` on `<Composer>` and `<Thread>` | Teammates' first names: an @mention is highlighted as it's typed in a private note, with "Deborah will be told" under the box, and in the saved note (v1.7.0). The app does the telling. `findMentions`, `mentionedNames`, `markMentions` are exported too. |
 | Reactions on `<Thread>` | A "👍 to “…”" (Android) or "Liked “…”" (iPhone) text shows as the emoji on the corner of the text it's about, like a phone, instead of its own bubble; one that matches no earlier text stays a bubble. Give each message `from` (a first name) for "Amanda liked this" on hover. `reactions={false}` turns it off (v1.8.0). |
+| A thumbs-up is "got it" | `buildInbox` doesn't put a conversation on Needs reply (or unread) for a 👍 reaction, iPhone's "Liked …", or a text that's only 👍; words before it still count, and other reactions (❓, ❤️) still do. `isAcknowledgement(body)` is the test, also from `@kallander/messages/reactions` for an app's server, which has no React (v1.8.1). |
 | `<MessagesLook>` | Hands the package the app's own button, segmented-control, tag and link classes. |
 
 ## Dropping it into a new CRM

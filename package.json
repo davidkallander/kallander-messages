@@ -1,14 +1,19 @@
 {
   "name": "@kallander/messages",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "Messages (the inbox, the conversation and the reply box) shared by David's CRMs.",
   "private": true,
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./reactions": "./src/reactions.ts",
     "./messages.css": "./src/messages.css"
   },
-  "files": ["src", "sql", "README.md"],
+  "files": [
+    "src",
+    "sql",
+    "README.md"
+  ],
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run"

@@ -1,6 +1,8 @@
 // Which conversations need a reply, are unread or are done (David, Oct 31, 2026; first built for Ranger Ops and the
 // Legacy CRM). Each CRM keeps its own tables; it hands over its messages in this shape and the marks people made.
 
+import { isAcknowledgement } from "./reactions";
+
 export interface Message {
   id: string;
   /** The conversation it belongs to: one person or record (a customer, a family, a phone number nobody's matched). */
@@ -56,7 +58,8 @@ export function buildInbox<M extends Message>(messages: M[], states: MessageStat
   for (const [key, list] of by) {
     list.sort((a, b) => b.sent_at.localeCompare(a.sent_at));
     const last = list[0];
-    const lastIn = list.find((m) => m.direction === "in");
+    // A thumbs-up (👍, or "Liked …") is "got it", not something to answer (v1.8.1; David, Nov 8, 2026)
+    const lastIn = list.find((m) => m.direction === "in" && !isAcknowledgement(m.body));
     const answeredAfter = (at: string) => list.some((m) => m.direction === "out" && m.status !== "failed" && m.sent_at > at);
     const s = st.get(key);
     const doneSince = (at: string) => !!s?.done_at && s.done_at >= at;
