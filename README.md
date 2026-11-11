@@ -27,6 +27,7 @@ buttons.
 | Reactions on `<Thread>` | A "👍 to “…”" (Android) or "Liked “…”" (iPhone) text shows as the emoji on the corner of the text it's about, like a phone, instead of its own bubble; one that matches no earlier text stays a bubble. Give each message `from` (a first name) for "Amanda liked this" on hover. `reactions={false}` turns it off (v1.8.0). |
 | A thumbs-up is "got it" | `buildInbox` doesn't put a conversation on Needs reply (or unread) for a 👍 reaction, iPhone's "Liked …", or a text that's only 👍; words before it still count, and other reactions (❓, ❤️) still do. `isAcknowledgement(body)` is the test, also from `@kallander/messages/reactions` for an app's server, which has no React (v1.8.1). |
 | `request.focus` on `<Composer>` | `false` sets who it's to and the way (Text, Email) without moving the cursor into the box: for a To: line where someone is still typing names (v1.8.2). |
+| `<EmailWindow>`, `onOpen` on a Thread message | An email as the customer saw it: give an email's message `onOpen` and clicking its bubble (or Enter on it) calls it; the app finds the email's HTML and shows `<EmailWindow subject lines html text loading onClose>`. The HTML sits in a frame that runs nothing in it, its links open in a new tab, and with no copy its words show with a line saying so. On a phone it fills the screen. Render it through a portal (`createPortal(…, document.body)`) so nothing on the page clips it (v1.9.0). |
 | `<MessagesLook>` | Hands the package the app's own button, segmented-control, tag and link classes. |
 
 ## Dropping it into a new CRM

@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { dayName } from "./rules";
 import { useLook } from "./look";
 import { markMentions } from "./mentions";
@@ -20,6 +20,8 @@ export type ThreadItem =
     attachments?: ReactNode;
     /** Who sent it, by first name: "Amanda liked this" on a reaction (v1.8.0). */
     from?: string;
+    /** Clicking the bubble opens it: an email, in <EmailWindow> as the customer saw it (v1.9.0). */
+    onOpen?: () => void;
   }
   | { kind: "note"; key: string; at: string; head?: ReactNode; body: string }
   | { kind: "event"; key: string; at: string; text: ReactNode };
@@ -104,9 +106,16 @@ const VERB: Record<string, string> = { "👍": "liked", "❤️": "loved", "👎
 const said = (t: Tapback) => `${t.who ?? (t.side === "us" ? "You" : "They")} ${VERB[t.emoji] ?? `reacted ${t.emoji} to`} this · ${new Date(t.at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`;
 
 function Bubble({ i, long, tapbacks }: { i: Extract<ThreadItem, { kind: "message" }>; long: number; tapbacks?: Tapback[] }) {
+  // An email opens like one in Mail: click (or Enter on) the bubble. A button inside it (Show all) still does its own thing.
+  const open = i.onOpen;
+  const opens = open ? {
+    role: "button", tabIndex: 0, title: "Open the email as they saw it", "aria-label": `Open the email${i.subject ? ` “${i.subject}”` : ""}`,
+    onClick: (e: MouseEvent) => { if (!(e.target as HTMLElement).closest("button, a") && !getSelection()?.toString()) open(); },
+    onKeyDown: (e: KeyboardEvent) => { if ((e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) { e.preventDefault(); open(); } },
+  } : {};
   return (
     <div className={`km-msg ${i.side}${i.failed ? " failed" : ""}${tapbacks?.length ? " km-has-tap" : ""}`}>
-      <div className="km-b">
+      <div className={`km-b${open ? " km-opens" : ""}`} {...opens}>
         {tapbacks?.length ? (
           // Like a phone: the reaction on the bubble's top corner, on the side away from the person who sent it. Inside
           // the bubble, not the message, whose width is the line under it when that's wider (v1.8.3)

@@ -3,6 +3,7 @@
 export { buildInbox, channelName, clock, dayName, firstName, initials, preview, whenShort, type Conversation, type Message, type MessageState } from "./rules";
 export { MessagesInbox, PaneHead, MarkButtons, type InboxFilter, type InboxProps, type InboxRow, type Mark } from "./Inbox";
 export { Thread, type ThreadItem } from "./Thread";
+export { EmailWindow, emailPage } from "./EmailWindow";
 export { Composer, insertAt, type Attachment, type ChannelOption, type ComposerProps, type Person, type SavedReply, type SendResult } from "./Composer";
 export { MessagesLook, useLook, type Look } from "./look";
 export { loadDraft, saveDraft, useDrafts, type Draft } from "./drafts";

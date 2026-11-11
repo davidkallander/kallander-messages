@@ -176,6 +176,22 @@
 .km-window-head { display: flex; align-items: center; justify-content: space-between; gap: 12px }
 .km-window-body { display: grid; gap: 10px }
 
+/* An email as the customer saw it (EmailWindow, v1.9.0): the email itself on white, as a mail app shows it */
+.km-mail { gap: 10px }
+.km-mail-subject { font-size: 17px; line-height: 1.3; overflow-wrap: anywhere }
+.km-mail-lines { font-size: 13px; color: var(--km-muted); display: grid; gap: 2px; overflow-wrap: anywhere }
+.km-mail-frame { display: block; width: 100%; height: 240px; border: 0; border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px var(--km-line) }
+.km-mail-note { margin: 0; font-size: 13px; color: var(--km-muted) }
+.km-mail-text { white-space: pre-wrap; font-size: 14px; line-height: 1.5; padding: 12px 14px; border-radius: 10px; box-shadow: 0 0 0 1px var(--km-line); overflow-wrap: anywhere }
+@media (max-width: 600px) {
+  .km-window-back:has(.km-mail) { padding: 0 }
+  .km-mail { border-radius: 0; min-height: 100%; align-content: start; padding: 12px }
+}
+/* A bubble that opens (an email): a pointer, and a little darker under it */
+.km-b.km-opens { cursor: pointer }
+.km-b.km-opens:hover { filter: brightness(.96) }
+.km-b.km-opens:focus-visible { outline: 2px solid var(--km-accent); outline-offset: 2px }
+
 /* Plain controls, for a CRM that hasn't given its own (MessagesLook) */
 .km-btn { border: 1px solid var(--km-line); background: var(--km-surface); color: var(--km-ink); padding: 5px 12px; border-radius: 8px; cursor: pointer; font: 500 13px var(--km-font); white-space: nowrap; text-decoration: none }
 .km-btn:hover { border-color: var(--km-accent) }
