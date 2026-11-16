@@ -20,6 +20,9 @@ export interface Message {
   automatic?: boolean;
   /** Waits on nobody: an opt-out ("Stop"), or history copied in from an older system. */
   ignore?: boolean;
+  /** One copy of a group email or text (v1.10.0; David, Nov 15, 2026): it's the newest message in the list, reading
+   *  "Group text: …", but it doesn't answer anyone, so a conversation waiting on a reply stays on Needs reply. */
+  group?: boolean;
 }
 
 /** The marks on a conversation, shared by everyone: read, Done (no reply needed), and Mark unread (a reminder). */
@@ -60,7 +63,7 @@ export function buildInbox<M extends Message>(messages: M[], states: MessageStat
     const last = list[0];
     // A thumbs-up (👍, or "Liked …") is "got it", not something to answer (v1.8.1; David, Nov 8, 2026)
     const lastIn = list.find((m) => m.direction === "in" && !isAcknowledgement(m.body));
-    const answeredAfter = (at: string) => list.some((m) => m.direction === "out" && m.status !== "failed" && m.sent_at > at);
+    const answeredAfter = (at: string) => list.some((m) => m.direction === "out" && !m.group && m.status !== "failed" && m.sent_at > at);
     const s = st.get(key);
     const doneSince = (at: string) => !!s?.done_at && s.done_at >= at;
     // Marked unread, and nobody's answered, marked it read or tapped Done since
@@ -83,13 +86,14 @@ const CHANNEL: Record<string, string> = { sms: "Text", email: "Email", call: "Ca
 export const channelName = (c: string) => CHANNEL[c] ?? "Message";
 
 /** The line under a conversation's name: "You: See you Tuesday" / "Email: Your proposal" / "Automatic: Reminder…" /
+ *  "Group text: Good evening, families…" /
  *  "Call from Mike" (a call they made, by the first name of `name`; just "Call" for a phone number). */
 export function preview(c: Pick<Conversation, "last"> & { name?: string }) {
   const m = c.last;
   const caller = m.channel === "call" && m.direction === "in" ? firstName(c.name) : "";
   const call = caller ? `Call from ${caller}${m.body ? `: ${m.body}` : ""}` : (m.body || "Call");
   const what = m.channel === "email" ? (m.subject || m.body) : m.channel === "call" ? call : m.body;
-  const lead = m.direction === "out" ? (m.automatic ? "Automatic: " : "You: ") : m.channel === "email" ? "Email: " : "";
+  const lead = m.direction === "out" ? (m.group ? `Group ${m.channel === "sms" ? "text" : "email"}: ` : m.automatic ? "Automatic: " : "You: ") : m.channel === "email" ? "Email: " : "";
   return (lead + (what || channelName(m.channel))).replace(/\s+/g, " ").trim().slice(0, 120);
 }
 

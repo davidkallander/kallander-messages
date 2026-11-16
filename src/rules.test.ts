@@ -33,6 +33,14 @@ describe("buildInbox", () => {
     const ms = [msg({ sent_at: "2026-10-31T10:00:00Z" }), msg({ direction: "out", status: "failed", sent_at: "2026-10-31T10:10:00Z" })];
     expect(buildInbox(ms, [])[0]).toMatchObject({ needsReply: true, unread: true });
   });
+  it("shows a group message as the newest, without answering anyone (v1.10.0)", () => {
+    const ms = [msg({ sent_at: "2026-10-31T10:00:00Z", body: "Can Sam come late?" }), msg({ direction: "out", group: true, body: "Good evening, families!", sent_at: "2026-10-31T11:00:00Z" })];
+    const c = buildInbox(ms, [])[0];
+    expect(c).toMatchObject({ needsReply: true, unread: true });
+    expect(preview(c)).toBe("Group text: Good evening, families!");
+    expect(preview({ last: msg({ direction: "out", group: true, channel: "email", subject: "Back to School" }) })).toBe("Group email: Back to School");
+    expect(buildInbox([ms[1]], [])[0]).toMatchObject({ needsReply: false, waitingOnThem: true });
+  });
   it("brings it back when they write again after Done", () => {
     const out = buildInbox([msg({ sent_at: "2026-10-31T12:00:00Z" })], [st({ read_at: "2026-10-31T10:00:00Z", done_at: "2026-10-31T10:00:00Z" })]);
     expect(out[0]).toMatchObject({ needsReply: true, unread: true });
