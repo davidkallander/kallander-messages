@@ -1,7 +1,7 @@
 // Which conversations need a reply, are unread or are done (David, Oct 31, 2026; first built for Ranger Ops and the
 // Legacy CRM). Each CRM keeps its own tables; it hands over its messages in this shape and the marks people made.
 
-import { isAcknowledgement } from "./reactions";
+import { isAcknowledgement, parseReaction } from "./reactions";
 
 export interface Message {
   id: string;
@@ -92,9 +92,24 @@ export function preview(c: Pick<Conversation, "last"> & { name?: string }) {
   const m = c.last;
   const caller = m.channel === "call" && m.direction === "in" ? firstName(c.name) : "";
   const call = caller ? `Call from ${caller}${m.body ? `: ${m.body}` : ""}` : (m.body || "Call");
-  const what = m.channel === "email" ? (m.subject || m.body) : m.channel === "call" ? call : m.body;
+  const what = m.channel === "email" ? (m.subject || m.body) : m.channel === "call" ? call : reactionLine(m.body) ?? m.body;
   const lead = m.direction === "out" ? (m.group ? `Group ${m.channel === "sms" ? "text" : "email"}: ` : m.automatic ? "Automatic: " : "You: ") : m.channel === "email" ? "Email: " : "";
   return (lead + (what || channelName(m.channel))).replace(/\s+/g, " ").trim().slice(0, 120);
+}
+
+// iPhone's words for a reaction, so every phone's reads the same in the list (v1.10.1; David, Nov 15, 2026): an Android
+// phone's `❤️ to "Good evening…"` reads `Loved "Good evening…"`, like an iPhone's
+const SAID: Record<string, [string, string]> = { "👍": ["Liked", "a like from"], "❤️": ["Loved", "a heart from"], "❤": ["Loved", "a heart from"],
+  "👎": ["Disliked", "a dislike from"], "😂": ["Laughed at", "a laugh from"], "‼️": ["Emphasized", "an exclamation from"], "‼": ["Emphasized", "an exclamation from"],
+  "❓": ["Questioned", "a question mark from"] };
+function reactionLine(body: string | null | undefined): string | null {
+  const r = body ? parseReaction(body) : null;
+  if (!r) return null;
+  const base = r.emoji.replace(/[\u{1F3FB}-\u{1F3FF}]/gu, "");
+  const said = SAID[base];
+  const quote = `“${r.quote.trim()}”`;
+  if (r.removed) return said ? `Removed ${said[1]} ${quote}` : `Removed ${r.emoji} from ${quote}`;
+  return said ? `${said[0]} ${quote}` : `Reacted ${r.emoji} to ${quote}`;
 }
 
 /** "Mike" from "Mike Neely"; nothing for a phone number or a blank. */

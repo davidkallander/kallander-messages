@@ -41,6 +41,15 @@ describe("buildInbox", () => {
     expect(preview({ last: msg({ direction: "out", group: true, channel: "email", subject: "Back to School" }) })).toBe("Group email: Back to School");
     expect(buildInbox([ms[1]], [])[0]).toMatchObject({ needsReply: false, waitingOnThem: true });
   });
+  it("words every phone's reaction the iPhone way in the list (v1.10.1)", () => {
+    const p = (body: string) => preview({ last: msg({ body }) });
+    expect(p("\u200b❤️\u200b to “ Good evening, families!”")).toBe("Loved “Good evening, families!”");
+    expect(p("Loved “Good evening, families!”")).toBe("Loved “Good evening, families!”");
+    expect(p("👍🏽 to \"See you at 9\"")).toBe("Liked “See you at 9”");
+    expect(p("🙏 to “See you at 9”")).toBe("Reacted 🙏 to “See you at 9”");
+    expect(p("Removed ❤️ from “See you at 9”")).toBe("Removed a heart from “See you at 9”");
+    expect(p("See you at 9")).toBe("See you at 9");
+  });
   it("brings it back when they write again after Done", () => {
     const out = buildInbox([msg({ sent_at: "2026-10-31T12:00:00Z" })], [st({ read_at: "2026-10-31T10:00:00Z", done_at: "2026-10-31T10:00:00Z" })]);
     expect(out[0]).toMatchObject({ needsReply: true, unread: true });
