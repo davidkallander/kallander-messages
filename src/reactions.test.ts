@@ -56,9 +56,17 @@ describe("a thumbs-up is got it", () => {
     expect(isAcknowledgement("Liked “See you at 9”")).toBe(true);
     expect(isAcknowledgement("👍🏽")).toBe(true);
     expect(isAcknowledgement("❓ to “See you at 9”")).toBe(false);
-    expect(isAcknowledgement("Loved “See you at 9”")).toBe(false);
+    expect(isAcknowledgement("Loved “See you at 9”")).toBe(true);
+    expect(isAcknowledgement("❤️ to “See you at 9”")).toBe(true);
+    expect(isAcknowledgement("Laughed at “See you at 9”")).toBe(true);
+    expect(isAcknowledgement("Reacted 🙏 to “See you at 9”")).toBe(true);
+    expect(isAcknowledgement("❤️")).toBe(true);
+    expect(isAcknowledgement("Questioned “See you at 9”")).toBe(false);
+    expect(isAcknowledgement("Disliked “See you at 9”")).toBe(false);
+    expect(isAcknowledgement("👎🏽 to “See you at 9”")).toBe(false);
+    expect(isAcknowledgement("❤️ but can we do 10?")).toBe(false);
     expect(isAcknowledgement("👍 sounds good, but can we do 10?")).toBe(false);
-    expect(isAcknowledgement("Removed a like from “See you at 9”")).toBe(false);
+    expect(isAcknowledgement("Removed a like from “See you at 9”")).toBe(true);
   });
   it("doesn't put a conversation back on Needs reply; words before it still do", () => {
     const m = (id: string, direction: "in" | "out", body: string, at: string) => ({ id, conversation: "c", direction, channel: "sms", body, sent_at: at, status: "sent" });

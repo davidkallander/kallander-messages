@@ -72,15 +72,21 @@ export function foldReactions<T extends { kind: string; key: string; at: string;
 }
 
 const THUMBS = /^👍(?:[\u{1F3FB}-\u{1F3FF}])?\ufe0f?$/u;
+const HEART = /^(?:❤️?|❤|♥️?|🩷|🧡|💛|💚|💙|💜|🤍|🖤|🤎|🩵|🩶|😍|🥰|💕|💖|💗|😂|🙏(?:[\u{1F3FB}-\u{1F3FF}])?)$/u;
+/** Reactions that may need an answer: a question or a thumbs-down. */
+const ASKS = new Set(["❓", "👎"]);
 /**
- * A thumbs-up means "got it" (David, Nov 8, 2026): a reaction 👍 (any skin tone, or iPhone's "Liked") or a text that's
- * only 👍. It doesn't put a conversation back on Needs reply or make it unread (v1.8.1). Any other reaction (❓, ❤️…)
- * still does, since it may need an answer.
+ * A reaction is "got it", not something to answer (David, Nov 8 and Nov 15, 2026): a 👍, ❤️, 😂 or any other reaction
+ * (iPhone's "Liked", "Loved", "Laughed at"…), a reaction taken back, or a text that's only a 👍 or a heart. It doesn't
+ * put a conversation back on Needs reply or make it unread (v1.8.1, hearts and the rest v1.9.1). A ❓ or 👎 still
+ * does, since it may need an answer.
  */
 export function isAcknowledgement(body: string | null | undefined) {
   const t = String(body ?? "").trim();
   if (!t) return false;
-  if ([...t.matchAll(/👍/gu)].length && /^(?:👍[\u{1F3FB}-\u{1F3FF}]?\ufe0f?\s*)+$/u.test(t)) return true;
+  const only = t.split(/\s+/u);
+  if (only.every((w) => THUMBS.test(w) || HEART.test(w))) return true;
   const r = parseReaction(t);
-  return !!r && !r.removed && THUMBS.test(r.emoji);
+  if (!r) return false;
+  return r.removed || !ASKS.has(r.emoji.replace(/\ufe0f/gu, "")) && !/^👎/u.test(r.emoji);
 }
