@@ -61,6 +61,10 @@ describe("a thumbs-up is got it", () => {
     expect(isAcknowledgement("Laughed at “See you at 9”")).toBe(true);
     expect(isAcknowledgement("Reacted 🙏 to “See you at 9”")).toBe(true);
     expect(isAcknowledgement("❤️")).toBe(true);
+    // Zero-width spaces around the emoji, as one Android phone sends it (v1.9.2)
+    expect(isAcknowledgement("\u200b❤️\u200b to “ See you at 9”")).toBe(true);
+    expect(parseReaction("\u200b❤️\u200b to “ See you at 9”")).toEqual({ emoji: "❤️", quote: " See you at 9", removed: false });
+    expect(findQuoted(" See you at 9", [{ body: "See you at 9 tomorrow" }])).toEqual({ body: "See you at 9 tomorrow" });
     expect(isAcknowledgement("Questioned “See you at 9”")).toBe(false);
     expect(isAcknowledgement("Disliked “See you at 9”")).toBe(false);
     expect(isAcknowledgement("👎🏽 to “See you at 9”")).toBe(false);

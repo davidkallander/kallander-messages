@@ -17,11 +17,15 @@ const REMOVED: [RegExp, string][] = [
 const EMOJI = /^(?:\p{Extended_Pictographic}|\p{Regional_Indicator}|[‍️⃣]|\p{Emoji_Modifier})+$/u;
 const QUOTE = `["“”„«»']`;
 
+// Some Android phones wrap the emoji in zero-width spaces ("\u200b❤️\u200b to “…”"; v1.9.2, David, Nov 15, 2026), so
+// they're taken out first. The zero-width joiner (U+200D) stays: it holds emoji like 👨‍👩‍👧 together.
+const invisible = (s: string) => s.replace(/[\u200b\u200c\u2060\ufeff]/gu, "").trim();
+
 export interface Reaction { emoji: string; quote: string; removed: boolean }
 
 /** What a reaction text says, or null when it's an ordinary text. */
 export function parseReaction(body: string): Reaction | null {
-  const t = body.trim();
+  const t = invisible(body);
   // The closing quote is optional: a phone that shortens the text may leave it off after the "…"
   const m = t.match(new RegExp(`^(.{1,40}?)\\s+(?:to|from)?\\s*${QUOTE}([\\s\\S]+?)${QUOTE}?$`, "u"));
   if (!m) return null;
@@ -82,7 +86,7 @@ const ASKS = new Set(["❓", "👎"]);
  * does, since it may need an answer.
  */
 export function isAcknowledgement(body: string | null | undefined) {
-  const t = String(body ?? "").trim();
+  const t = invisible(String(body ?? ""));
   if (!t) return false;
   const only = t.split(/\s+/u);
   if (only.every((w) => THUMBS.test(w) || HEART.test(w))) return true;
