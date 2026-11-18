@@ -116,6 +116,35 @@ export function Composer(p: ComposerProps) {
   const [problem, setProblem] = useState("");
   const [big, setBig] = useState(false);
   const [open, setOpen] = useState(false);
+  // Folding back to one line waits for a click elsewhere to finish (v1.11.2; David, Nov 18, 2026). The box getting
+  // smaller moves the conversation above it, so folding on the press moved a button out from under the pointer before
+  // the release and the click did nothing.
+  const root = useRef<HTMLDivElement>(null);
+  const pressing = useRef(false);
+  const lastUp = useRef(0);
+  const foldLater = useRef(false);
+  const fold = () => {
+    const el = root.current;
+    if (el && el.contains(document.activeElement)) return;
+    if (now.current.body.trim() || now.current.files.length) return;
+    setOpen(false);
+  };
+  // A press that never becomes a click (a drag) still folds it, a moment later
+  const fallback = () => setTimeout(() => { if (foldLater.current) { foldLater.current = false; fold(); } }, 400);
+  useEffect(() => {
+    const down = () => { pressing.current = true; };
+    const up = () => { pressing.current = false; lastUp.current = Date.now(); if (foldLater.current) fallback(); };
+    // The click has landed on what was under the pointer: now it can fold
+    const click = () => { if (!foldLater.current) return; foldLater.current = false; setTimeout(fold, 60); };
+    document.addEventListener("pointerdown", down, true);
+    document.addEventListener("pointerup", up, true);
+    document.addEventListener("pointercancel", up, true);
+    document.addEventListener("click", click, true);
+    return () => {
+      document.removeEventListener("pointerdown", down, true); document.removeEventListener("pointerup", up, true);
+      document.removeEventListener("pointercancel", up, true); document.removeEventListener("click", click, true);
+    };
+  }, []);
   const text = useRef<HTMLTextAreaElement>(null);
   const area = useRef<HTMLTextAreaElement | null>(null);
   const [menu, setMenu] = useState(false);
@@ -330,8 +359,14 @@ export function Composer(p: ComposerProps) {
   const title = `${ch.label}${names.length ? ` ${names.join(" and ")}` : ""}`;
 
   return (
-    <div className={`km-compose${small ? " small" : ""}`} onFocus={() => setOpen(true)}
-      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null) && !body.trim()) setOpen(false); }}
+    <div ref={root} className={`km-compose${small ? " small" : ""}`} onFocus={() => { foldLater.current = false; setOpen(true); }}
+      onBlur={(e) => {
+        if (e.currentTarget.contains(e.relatedTarget as Node | null) || body.trim()) return;
+        // A mouse moves focus on the press, a finger after it lifts (just before the click): either way, wait for the click
+        if (pressing.current) foldLater.current = true;
+        else if (Date.now() - lastUp.current < 500) { foldLater.current = true; fallback(); }
+        else setOpen(false);
+      }}
       // Its buttons (To, Text / Email / Note) keep the typing where it is: Safari doesn't focus a clicked button, which
       // would otherwise look like leaving the box and fold it before the click lands
       onMouseDown={(e) => { if (open && !(e.target as HTMLElement).closest("textarea, input")) e.preventDefault(); }}>
