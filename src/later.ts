@@ -1,11 +1,12 @@
-// Send later (v1.11.0; David, Nov 18, 2026): the times the reply box offers beside Send, like Gmail's Schedule send and
+// Send later (v1.11.0, quarter past from v1.11.1; David, Nov 18, 2026): the times the reply box offers beside Send, like Gmail's Schedule send and
 // Mail's Send Later. All in the computer's own time zone. The app keeps the message and sends it when it's due.
 
 export interface LaterChoice { label: string; at: Date }
 
-const at = (base: Date, days: number, hour: number) => { const d = new Date(base); d.setDate(d.getDate() + days); d.setHours(hour, 0, 0, 0); return d; };
+// A quarter past, not on the hour (David, Nov 18, 2026): 8:15, 1:15
+const at = (base: Date, days: number, hour: number) => { const d = new Date(base); d.setDate(d.getDate() + days); d.setHours(hour, 15, 0, 0); return d; };
 
-/** "Tomorrow morning" 8 AM, "Tomorrow afternoon" 1 PM, and "Monday morning" 8 AM (left out when tomorrow is Monday).
+/** "Tomorrow morning" 8:15 AM, "Tomorrow afternoon" 1:15 PM, and "Monday morning" 8:15 AM (left out when tomorrow is Monday).
  *  Before 7 AM the first two are this morning and this afternoon. */
 export function laterChoices(now: Date = new Date()): LaterChoice[] {
   const early = now.getHours() < 7;
