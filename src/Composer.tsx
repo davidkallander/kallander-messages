@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { markMentions, mentionedNames } from "./mentions";
 import { useLook } from "./look";
 import { loadDraft, saveDraft } from "./drafts";
+import { laterChoices, laterProblem, laterWhen, localInput } from "./later";
 
 // The reply box (David, Oct 31, 2026): how (Text, Email, a private Note…), who (when there's more than one person to
 // write to), the subject for an email, and the words. ⌘ Enter sends. An email can open in a larger window, like Mail's.
@@ -55,8 +56,12 @@ export interface ComposerProps {
   request?: { channel: string; to?: string[]; n: number; /** false: pick the way and who without taking the cursor (v1.8.2) */ focus?: boolean } | null;
   /** The subject it starts with (Re: their last one). */
   subject?: string;
-  /** Sends it. Returns nothing when it went, else what went wrong (and whether some of it went). */
-  send: (p: { channel: string; to: string[]; subject: string; body: string; files: Attachment[] }) => Promise<SendResult>;
+  /** Sends it. Returns nothing when it went, else what went wrong (and whether some of it went). With `at` (send later),
+   *  the app keeps it and sends it then: an ISO time. */
+  send: (p: { channel: string; to: string[]; subject: string; body: string; files: Attachment[]; at?: string }) => Promise<SendResult>;
+  /** Send later (v1.11.0): a clock beside Send with Tomorrow morning, Tomorrow afternoon, Monday morning and a date and
+   *  time of their own; `send` gets `at`. Not on a private note. Leave out for none. */
+  later?: boolean;
   onSent?: (channel: string) => void;
   /** Email can open in a larger window. */
   bigWindow?: boolean;
@@ -115,6 +120,9 @@ export function Composer(p: ComposerProps) {
   const area = useRef<HTMLTextAreaElement | null>(null);
   const [menu, setMenu] = useState(false);
   const menuBox = useRef<HTMLSpanElement>(null);
+  const [laterMenu, setLaterMenu] = useState(false);
+  const [laterAt, setLaterAt] = useState("");
+  const laterBox = useRef<HTMLSpanElement>(null);
   // The menu closes on a click anywhere else (the box keeps the typing focus, so leaving it isn't a blur)
   useEffect(() => {
     if (!menu) return;
@@ -122,6 +130,12 @@ export function Composer(p: ComposerProps) {
     document.addEventListener("mousedown", away);
     return () => document.removeEventListener("mousedown", away);
   }, [menu]);
+  useEffect(() => {
+    if (!laterMenu) return;
+    const away = (e: MouseEvent) => { if (!laterBox.current?.contains(e.target as Node)) setLaterMenu(false); };
+    document.addEventListener("mousedown", away);
+    return () => document.removeEventListener("mousedown", away);
+  }, [laterMenu]);
   const ch = p.channels.find((c) => c.key === channel) ?? first;
   const pick = (k: string, who?: string[]) => { const t = who?.length ? who : p.defaultTo?.(k) ?? []; setChannel(k); setTo(t); setProblem(""); now.current = { ...now.current, channel: k, to: t }; if (now.current.body.trim() || now.current.files.length) keep({}); };
   // Another conversation in the same box: its own draft, or an empty box
@@ -172,12 +186,12 @@ export function Composer(p: ComposerProps) {
     setOpen(true);
   };
 
-  const send = async () => {
+  const send = async (at?: Date) => {
     if (disabled) return false;
     setBusy(true); setProblem("");
     let ok = false;
     try {
-      const out = await p.send({ channel, to: picked, subject: ch.subject ? subject.trim() : "", body: body.trim(), files: sending });
+      const out = await p.send({ channel, to: picked, subject: ch.subject ? subject.trim() : "", body: body.trim(), files: sending, ...(at ? { at: at.toISOString() } : {}) });
       const why = typeof out === "string" ? out : out?.problem ?? "";
       const sent = !out || (typeof out === "object" && out.sent);
       if (why) setProblem(why);
@@ -187,7 +201,15 @@ export function Composer(p: ComposerProps) {
     setBusy(false);
     return ok;
   };
-  const go = () => void send().then((ok) => ok && setBig(false));
+  const go = (at?: Date) => void send(at).then((ok) => ok && setBig(false));
+  const canLater = !!p.later && !ch.private;
+  const [laterWhy, setLaterWhy] = useState("");
+  const goLater = (at: Date) => {
+    const why = laterProblem(at);
+    if (why) { setLaterWhy(why); return; }
+    setLaterMenu(false); setLaterWhy("");
+    go(at);
+  };
   // A saved reply goes in where the cursor is (in place of anything selected), and the cursor ends up after it
   const putReply = (r: SavedReply) => {
     setMenu(false);
@@ -273,7 +295,30 @@ export function Composer(p: ComposerProps) {
             {area_}
           </span>;
         })()}
-        <button type="button" className="km-send" disabled={disabled} onClick={go} aria-label={ch.private ? `Add ${ch.label.toLowerCase()}` : "Send"} title={`${ch.private ? `Add ${ch.label.toLowerCase()}` : "Send"} (⌘ Enter)`}>
+        {canLater && (
+          <span className="km-later" ref={laterBox} onKeyDown={(e) => { if (e.key === "Escape" && laterMenu) { e.stopPropagation(); setLaterMenu(false); } }}>
+            <button type="button" className="km-later-btn" disabled={disabled} aria-haspopup="menu" aria-expanded={laterMenu} aria-label="Send later" title="Send later"
+              onClick={() => { setLaterWhy(""); if (!laterAt) setLaterAt(localInput(laterChoices()[0].at)); setLaterMenu(!laterMenu); }}>
+              <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+            {laterMenu && (
+              <span className="km-replies-menu km-later-menu" role="menu" aria-label="Send later">
+                <b className="km-replies-head">Send later</b>
+                {laterChoices().map((c) => (
+                  <button key={c.label} type="button" role="menuitem" onClick={() => goLater(c.at)}>
+                    <span>{c.label}</span><small>{laterWhen(c.at)}</small>
+                  </button>
+                ))}
+                <span className="km-later-pick">
+                  <input type="datetime-local" aria-label="Date and time to send" value={laterAt} min={localInput(new Date())} onChange={(e) => { setLaterAt(e.target.value); setLaterWhy(""); }} />
+                  <button type="button" className="km-later-go" onClick={() => goLater(new Date(laterAt))}>Schedule</button>
+                </span>
+                {laterWhy && <small className="km-later-why" role="alert">{laterWhy}</small>}
+              </span>
+            )}
+          </span>
+        )}
+        <button type="button" className="km-send" disabled={disabled} onClick={() => go()} aria-label={ch.private ? `Add ${ch.label.toLowerCase()}` : "Send"} title={`${ch.private ? `Add ${ch.label.toLowerCase()}` : "Send"} (⌘ Enter)`}>
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
       </div>

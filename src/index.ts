@@ -5,6 +5,7 @@ export { MessagesInbox, PaneHead, MarkButtons, type InboxFilter, type InboxProps
 export { Thread, type ThreadItem } from "./Thread";
 export { EmailWindow, emailPage } from "./EmailWindow";
 export { Composer, insertAt, type Attachment, type ChannelOption, type ComposerProps, type Person, type SavedReply, type SendResult } from "./Composer";
+export { laterChoices, laterProblem, laterWhen, localInput, type LaterChoice } from "./later";
 export { MessagesLook, useLook, type Look } from "./look";
 export { loadDraft, saveDraft, useDrafts, type Draft } from "./drafts";
 export { findMentions, markMentions, mentionedNames } from "./mentions";

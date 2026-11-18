@@ -16,6 +16,9 @@ export type ThreadItem =
     /** Didn't send: true, or why. */
     failed?: boolean | string;
     sending?: boolean;
+    /** Waiting to be sent later (v1.11.0): the bubble shows dashed, like Send Later on an iPhone, with this line under it
+     *  ("Sends Tue, Nov 19, 8:00 AM · Cancel"). Give it `at` = when it'll send, so it sits at the bottom. */
+    later?: ReactNode;
     /** Pictures and files sent with it, shown in the bubble under the words (v1.6.0). */
     attachments?: ReactNode;
     /** Who sent it, by first name: "Amanda liked this" on a reaction (v1.8.0). */
@@ -114,7 +117,7 @@ function Bubble({ i, long, tapbacks }: { i: Extract<ThreadItem, { kind: "message
     onKeyDown: (e: KeyboardEvent) => { if ((e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) { e.preventDefault(); open(); } },
   } : {};
   return (
-    <div className={`km-msg ${i.side}${i.failed ? " failed" : ""}${tapbacks?.length ? " km-has-tap" : ""}`}>
+    <div className={`km-msg ${i.side}${i.failed ? " failed" : ""}${i.later ? " km-is-later" : ""}${tapbacks?.length ? " km-has-tap" : ""}`}>
       <div className={`km-b${open ? " km-opens" : ""}`} {...opens}>
         {tapbacks?.length ? (
           // Like a phone: the reaction on the bubble's top corner, on the side away from the person who sent it. Inside
@@ -130,6 +133,7 @@ function Bubble({ i, long, tapbacks }: { i: Extract<ThreadItem, { kind: "message
       {i.meta && <div className="km-meta">{i.meta}</div>}
       {i.failed && <div className="km-failed">Didn't send{typeof i.failed === "string" && i.failed ? `: ${i.failed}` : ""}</div>}
       {i.sending && <div className="km-meta">Sending…</div>}
+      {i.later && <div className="km-meta km-later-line">{i.later}</div>}
     </div>
   );
 }
