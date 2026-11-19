@@ -266,3 +266,13 @@
 .km-msg.km-is-later .km-b { background: transparent; color: var(--km-ink); border: 1.5px dashed var(--km-send) }
 .km-later-line { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; justify-content: flex-end }
 @media (max-width: 420px) { .km-later-pick { grid-template-columns: minmax(0, 1fr) } .km-later-menu .km-later-go { justify-self: end } }
+
+/* Phones (v1.12.1; David, Nov 19, 2026): taps about 44 tall, as on an iPhone. The back link grows; the round Send and
+   clock buttons, the reply box's small square buttons and the To chips keep their look and answer taps in a larger
+   area around them */
+@media (max-width: 760px) {
+  .km-back { display: flex; align-items: center; min-height: 44px; align-self: stretch }
+  .km-send, .km-later-btn, .km-expand, .km-chip { position: relative }
+  .km-send::after, .km-later-btn::after, .km-expand::after { content: ""; position: absolute; inset: -6px }
+  .km-chip::after { content: ""; position: absolute; inset: -9px -3px }
+}
