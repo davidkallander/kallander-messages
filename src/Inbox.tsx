@@ -57,6 +57,9 @@ export interface InboxProps<R extends InboxRow> {
   /** Show a conversation's draft ("Draft: …", like Messages on a Mac) in place of its last message: the reply box's
    *  drafts, kept under the row's key (Composer draftKey). */
   drafts?: boolean;
+  /** Send later (v1.12.0): when a conversation has a message waiting to go, its time ("Thu 8:15 AM"), shown in the list
+   *  ahead of the last message so no one writes the same thing by hand. A draft still shows first. */
+  scheduled?: (key: string) => string | undefined;
   /** The right side: a PaneHead and the conversation. */
   pane: ReactNode;
   className?: string;
@@ -149,7 +152,7 @@ export function MessagesInbox<R extends InboxRow>(p: InboxProps<R>) {
           <p className="km-empty">{t ? "No conversations match." : filter?.empty ?? "No messages yet."}</p>
         )}
         <ul className="km-rows">
-          {list.map((r) => <Row key={r.key} r={r} on={r.key === p.selected} href={p.href(r.key)} mark={p.mark} draft={p.drafts ? loadDraft(r.key)?.body : undefined} onMenu={(x, y) => setMenu({ r, x, y })} />)}
+          {list.map((r) => <Row key={r.key} r={r} on={r.key === p.selected} href={p.href(r.key)} mark={p.mark} draft={p.drafts ? loadDraft(r.key)?.body : undefined} scheduled={p.scheduled?.(r.key)} onMenu={(x, y) => setMenu({ r, x, y })} />)}
         </ul>
         {menu && <RowMenu r={menu.r} x={menu.x} y={menu.y} mark={p.mark} more={p.menu} open={() => p.open(menu.r.key)} onClose={() => setMenu(null)} />}
       </section>
@@ -214,7 +217,7 @@ const loadIonic = () => (ionic ??= import("@ionic/core/components").then(({ init
 
 type Sliding = HTMLElement & { close: () => Promise<void> };
 
-function Row<R extends InboxRow>({ r, on, href, mark, draft, onMenu }: { r: R; on: boolean; href: string; mark?: (r: R, what: Mark) => void; draft?: string; onMenu: (x: number, y: number) => void }) {
+function Row<R extends InboxRow>({ r, on, href, mark, draft, scheduled, onMenu }: { r: R; on: boolean; href: string; mark?: (r: R, what: Mark) => void; draft?: string; scheduled?: string; onMenu: (x: number, y: number) => void }) {
   const look = useLook();
   const [touch] = useState(touchScreen);
   const [ready, setReady] = useState(false);
@@ -244,7 +247,8 @@ function Row<R extends InboxRow>({ r, on, href, mark, draft, onMenu }: { r: R; o
       <span className="km-av" aria-hidden="true">{r.avatar ?? initials(r.name)}</span>
       <span className="km-main">
         <span className="km-name"><span className="km-name-text">{r.name}</span>{r.tags?.map((g) => <span key={g.label} className={`${look.tag}${g.tone ? ` ${g.tone}` : ""}`}>{g.label}</span>)}</span>
-        <span className="km-preview">{draft ? <><span className="km-draft">Draft:</span> {draft.replace(/\s+/g, " ").slice(0, 120)}</> : preview(r)}</span>
+        <span className="km-preview">{draft ? <><span className="km-draft">Draft:</span> {draft.replace(/\s+/g, " ").slice(0, 120)}</>
+          : scheduled ? <><span className="km-sched">Scheduled {scheduled}:</span> {preview(r)}</> : preview(r)}</span>
       </span>
       <span className="km-when">{whenShort(r.last.sent_at)}</span>
       {mark && !touch && <span className="km-hover">
